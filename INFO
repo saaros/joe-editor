@@ -1,3 +1,89 @@
+Release 0.1.5 of JOE
+
+FIXES
+
+	* No longer looses single character of typehead when exiting
+
+	* Strcat to a block not guarenteed to contain a zero fixed.  This
+	  may have caused core dumps or may have messed up the help screen.
+
+	* posix driver fixed
+
+Release 0.1.4 of JOE
+
+FIXES
+
+	* Control characters in prompts now handled correctly
+
+	* Detection for recursive macros added
+
+	* Stdout/stderr set properly for pipe-block-through-shell-command
+
+	* Generic SVR3 async file added
+
+	* Spelling errors in man page fixed :-)
+
+Release 0.1.2 of JOE
+
+FIXES AND NEW FEATURES
+
+	* undo/redo are now a real undo system instead of undelete
+
+	* keyboard macros added
+
+	* repeat prefix added
+
+	* capture shell output and pipe block through shell command added
+
+	* A version for Linux is now included
+
+	* Simple macros may be specified in the .joerc file
+
+	* Some bugs in the paragraph reformat routine were fixed
+
+	* The right margin may be specified in the .joerc file
+
+	* A bug where strange things would happen if you typed \ in the
+          search & replace prompt is fixed
+
+Release 0.1.1 of JOE (Joe's Own Editor):  Note that this program was
+previously calles 'E' (which turned out to be the RAND EDITOR and one of the
+synonyms for vi) and 'J' (which turned out to be a language and the name of
+another UNIX editor).  See below for list of big fixes and new features.
+Find the source for this release in 'alt.sources'
+
+FIXES AND NEW FEATURES FOR THIS VERSION
+
+	* Left arrow jumping fixed
+
+	* No longer touches the IXON IXOFF setting
+
+	* Reference to Gnu EMACS removed from the copyright notice :-)
+
+	* The patch for Undo and Redo is not needed for this version.
+
+	* Name of initialization file changed to '.joerc'
+
+	* Versions for ESIX and POSIX now included
+	  (think you Mike Lijewski for the POSIX driver)
+
+	* Users can now customize the help text.  The help text is now placed
+	  in the initialization file
+
+	* A compile option for passing characters with bit 7 set has been
+	  added.  This is for Iceland
+
+	* Added kill line function for the emacs people.  See 'killlin' in
+          the .joerc file
+
+	* The ioctls TIOCGSIZE and TIOCGWINSZ are used to get the
+	  screen/window size.  If the window changes size, JOE resizes the
+	  screen on the next key press
+
+	* Prompts and messages wider than the screen width are now handled
+	  properly
+
+=-=-=-=-=-=
 
 Release 0.0.0 of 'J' (Joe's Editor):  This release supersedes all previous
 versions which lack a release number.  Note that this program was previously

@@ -1,4 +1,4 @@
-/* Terminal interface for HPUX
+/* Terminal interface for ESIX
    Copyright (C) 1991 Joseph H. Allen
 
 This file is part of JOE (Joe's Own Editor)
@@ -18,10 +18,11 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include <stdio.h>
 #include <signal.h>
 #include <fcntl.h>
-#include <time.h>
+#include <sys/time.h>
 #include <sys/param.h>
 #include <termio.h>
 #include "async.h"
+
 
 #define DIVISOR 12000000
 #define TIMES 2

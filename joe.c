@@ -1,34 +1,37 @@
-/* J - Joe's Editor - the bulk of the code is here
+/* JOE - Joe's Own Editor - the bulk of the code is here
    Copyright (C) 1991 Joseph H. Allen
 
-This file is part of J (Joe's Editor)
+This file is part of JOE (Joe's Own Editor)
 
-J is free software; you can redistribute it and/or modify it under the terms
+JOE is free software; you can redistribute it and/or modify it under the terms
 of the GNU General Public License as published by the Free Software
 Foundation; either version 1, or (at your option) any later version.
 
-J is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+JOE is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with GNU Emacs; see the file COPYING.  If not, write to
+along with JOE; see the file COPYING.  If not, write to
 the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 #include <stdio.h>
-/* #include <stdlib.h> */
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <errno.h>
 #include <pwd.h>
+/* #include <sys/dir.h> */
 extern errno;
 #include "async.h"
 #include "blocks.h"
-#include "j.h"
+#include "joe.h"
 int width=80;
 int height=24;
 int scroll=1;
+int noupdate=0;
+int repeatamnt=1;
+int nrepeatamnt;
 
 unsigned char stalin[PATHSIZE];
 
@@ -38,6 +41,10 @@ int bots;
 int oxpos=0;            /* Current cursor position */
 int oypos=0;
 int *scrn;            /* Screen buffer address */
+unsigned char *help=0;
+int helplines=0;
+int helpsize=0;
+int helpblksize=0;
 
 unsigned char *omsg=0;           /* Pointer to opening message */
 
@@ -55,16 +62,32 @@ if(scroll)
 else eputs("\033[0m\033[H\033[J");
 }
 
-dclose(ms)
-unsigned char *ms;
+dclose()
 {
 setregn(0,height-1);
 cpos(height-1,0);
-tputss(ms);
-eputs("\033[K");
-oxpos=strlen(ms);
-cpos(height-1,0);
-eputc(10);
+attrib(0);
+}
+
+resize()
+{
+int x;
+unsigned char buf[30];
+free(scrn);
+scrn=(int *)malloc(width*height*sizeof(int));
+for(x=0;x<width*height;x++) scrn[x]= ' ';
+if(scroll)
+ {
+ sprintf(buf,"\033[0m\033[1;%dr\033[H\033[J",height), eputs(buf);
+ bots=height-1;
+ }
+else eputs("\033[0m\033[H\033[J");
+smode=0;
+if(wind) wind=helplines;
+if(wind>height-3) wind=height-3;
+if(wind) hupd=1;
+wfit();
+upd=1;
 }
 
 cposs(y,x)
@@ -106,6 +129,7 @@ if(x==oxpos)
  if(y==0 && x==0)
   {
   eputs("\033[H");
+  return;
   }
  if(y>oypos)
   sprintf(s,"\033[%dB",y-oypos);
@@ -155,7 +179,10 @@ if(top!=tops || bots!=bot)
   {
   oxpos=0;
   oypos=0;
-  sprintf(sst,"\033[%d;%dr",top+1,bot+1);
+  sprintf(sst,"\033[%d;%dr\033[H",top+1,bot+1);
+  /* I shouldn't need the \033[H, but so many vt100 emulators forget to home
+   * the cursor after a set scrolling region...
+   */
   eputs(sst);
   }
  }
@@ -192,42 +219,6 @@ int ypos=0;
 TXTSIZ saddr=0;
 TXTSIZ xoffset=0;
 
-unsigned char help[]=
-"\
-\240\240\240\310\345\354\360\240\323\343\362\345\345\356\240\240\240\364\365\
-\362\356\240\357\346\346\240\367\351\364\350\240\336\313\310\240\240\
-\240\240\240\240\240\240\240\240\240\240\240\240\240\240\240\240\240\240\
-\240\240\240\240\240\240\240\240\240\240\240\240\240\240\240\240\240\240\
-\240\240\240\240\240\240\240\
-\240\
-\7\017 \024\017             \4\5\014\5\024\5    \015\011\023\03       \02\
-\014\017\03\013    \06\011\016\04     \021\025\017\024\05    \027\011\016\04\017\
-\027     \
-\240\
-\240\
-^B left  ^F right ^D single ^T  mode   ^KB mark ^KF text `  Ctrl  ^KO split  \
-\240\
-\240\
-^Z word  ^X word  ^W >word  ^R  retype ^KK end  ^L  next ^\\ bit-7 ^KI 1 / all\
-\240\
-\240\
-^A edge  ^E edge  ^O word<  ^KA center ^KC copy ^KL line \06\011\014\
-\05     ^KP up     \
-\240\
-\240\
-^P up    ^N down  ^J >line  ^KJ format ^KM move \05\
-\030\011\024     ^KD save ^KN down   \
-\240\
-\240\
-^U page  ^V page  ^Y line   ^KZ shell  ^KW save ^KX save ^KR read ^KG grow   \
-\240\
-\240\
-^KU top ^KV end   ^K- undo  ^K, indnt< ^KY kill ^C abort/         ^KT shrink \
-\240\
-\240\
-^G matching ([<{` ^K+ redo  ^K. indnt>             close window  ^KE get file\
-\240";
-
 /* Clear end of line if needed.  i is row number and j is column number */
 
 clreolchk(i,j)
@@ -252,8 +243,32 @@ if(t==jj)
  }
 while(t>=jj) k[t--]=' ';
 cpos(i,jj);
-tattrib(' ');
+attrib(0);
 eputs("\033[K");
+}
+
+/* Change buffer character to displayable form */
+
+showas(ch)
+{
+#ifdef NOHIGHBIT
+if(ch>=128)
+ {
+ ch&=127;
+ ch|=INVERSE;
+ }
+#endif
+if((ch&127)<32)
+ {
+ ch+='@';
+ ch|=UNDERLINE;
+ }
+if((ch&127)==127)
+ {
+ ch&=~127;
+ ch|='?'|UNDERLINE;
+ }
+return ch;
 }
 
 int udline(i)
@@ -262,7 +277,7 @@ int q=i*width;
 TXTSIZ j;
 int t;
 int u;
-unsigned char ch;
+int ch;
 for(j=0;1;j++)
  {
  if(have) return -1;
@@ -282,7 +297,7 @@ for(j=0;1;j++)
  if(ch==TAB)
   {
   ch=' ';
-  if(fmnote()-1>=markb && fmnote()<=marke && curbuf==markbuf) ch^=128;
+  if(fmnote()-1>=markb && fmnote()<=marke && curbuf==markbuf) ch^=INVERSE;
   t=i*width+j-xoffset;
   do
    {
@@ -304,7 +319,8 @@ for(j=0;1;j++)
   }
  else
   {
-  if(fmnote()-1>=markb && fmnote()<=marke && curbuf==markbuf) ch^=128;
+  ch=showas(ch);
+  if(fmnote()-1>=markb && fmnote()<=marke && curbuf==markbuf) ch^=INVERSE;
   t=q+j-xoffset;
   if(j>=xoffset && j<xoffset+width-1)
    {
@@ -343,26 +359,26 @@ TXTSIZ sve=fmnote();
 TXTSIZ sve1;
 
 /* Status line */
-bset(stalin,width-1,' ');
-bfwrd(stalin,"File:",5);
-if(changed)
- if(gfnam[0]) bfwrd(bfwrd(stalin+6,gfnam,strlen(gfnam))+strlen(gfnam),
- " (Modified)",11);
- else bfwrd(bfwrd(stalin+6,"(Unnamed)",9)+9," (Modified)",11);
+strcpy(stalin,"\\i");
+if(gfnam[0]) strcat(stalin,gfnam);
+else strcat(stalin,"(Unnamed)");
+if(changed) strcat(stalin," (Modified)");
+if(record) strcat(stalin," (Macro recording)");
+if(!helpon && strlen(stalin)+21<width+1)
+ {
+ int x=strlen(stalin);
+ while(x<width-20) stalin[x++]=' ';
+ stalin[x]=0;
+ strcat(stalin,"Hit Ctrl-K H for help");
+ }
 else
- if(gfnam[0]) bfwrd(stalin+6,gfnam,strlen(gfnam));
- else bfwrd(stalin+6,"(Unnamed)",9);
-if(!helpon) bfwrd(stalin+width-22,"Hit Ctrl-K H for help",21);
+ {
+ int x=strlen(stalin);
+ while(x<width+1) stalin[x++]=' ';
+ stalin[x]=0;
+ }
 
-for(y=0;y<width-1;y++)
- if(scrn[y+curwin->wind*width]!=stalin[y]+128)
-  {
-  if(have) break;
-  cpos(curwin->wind,y);
-  tputcc(stalin[y]+128);
-  scrn[y+curwin->wind*width]=stalin[y]+128;
-  oxpos++;
-  }
+msgout(curwin->wind,stalin,0,1);
 
 x=getcol();
 if(fmnrnl()) fmpoint(fmnote()+1);
@@ -428,41 +444,58 @@ fmpoint(sve);
 
 dupdatehelp()
 {
-int i,j;
+int att;
+int i,j,c;
 unsigned char *from=help;
 int *too=scrn;
-wind=helplines;
-for(i=0;i!=helplines;i++)
+if(helplines>height-3) wind=height-3;
+else wind=helplines;
+for(i=0;i!=wind;++too, ++i)
  {
- for(j=0;j!=helpwidth;j++)
+ j=0; att=0;
+ loop:
+ if(have) return;
+ if(j==width-1)
   {
-  if(have) return;
-  if(j>=width-1)
-   {
-   from+=helpwidth-width+1;
-   break;
-   }
-  if(*from!=*too)
-   {
-   cpos(i,j);
-   tputcc((unsigned char)(*too= *from));
-   oxpos++;
-   }
-  from++;
-  too++;
+  while(*from!='\n') ++from;
+  ++from;
+  continue;
   }
- for(;j!=width-1;j++)
+ if(*from=='\n')
   {
-  if(have) return;
-  if(' '!=*too)
-   {
-   cpos(i,j);
-   tputcc((unsigned char)(*too= ' '));
-   oxpos++;
-   }
-  too++;
+  hclreol:
+  ++from;
+  cpos(i,j);
+  eputs("\033[K");
+  while(j!=width-1) *too++ =' ', ++j;
+  continue;
   }
- too++;
+ if(*from=='\\')
+  {
+  ++from;
+  if(*from=='\n') goto hclreol;
+  if(*from=='u')
+   {
+   att^=UNDERLINE;
+   ++from;
+   goto loop;
+   }
+  if(*from=='i')
+   {
+   att^=INVERSE;
+   ++from;
+   goto loop;
+   }
+  }
+ c= *from++ | att;
+ if(c!= *too)
+  {
+  cpos(i,j);
+  tputcc(*too= c);
+  oxpos++;
+  }
+ ++too; ++j;
+ goto loop;
  }
 hupd=0;
 }
@@ -512,52 +545,35 @@ int x;
 for(x=0;x<width;x++) scrn[width*line+x]= -1;
 }
 
-int tattrib(c)
-unsigned char c;
-{
-int mmode=0;
-if(c>=128)
- {
- mmode|=INVERSE;
- c-=128;
- }
-if(c==127)
- {
- mmode|=UNDERLINE;
- c='?';
- }
-else if(c<32)
- {
- mmode|=UNDERLINE;
- c+='@';
- }
-attrib(mmode);
-return c;
-}
-
 tputcc(c)
-unsigned char c;
 {
-eputc(tattrib(c));
-}
-
-tputss(s)
-unsigned char *s;
-{
-while(*s) tputcc(*(s++));
+attrib(c);
+eputc(c&255);
 }
 
 int backup=0;
 FILE *handle;
 unsigned char gfnam[PATHSIZE];
 
-TXTSIZ bufsiz;        /* Size of buffer */
-TXTPTR point;            /* The point */
-TXTPTR buffer;           /* The buffer */
-TXTPTR filend;           /* First character not in buffer */
-TXTPTR hole;             /* Beginning of hole */
-TXTPTR ehole;            /* First character not in hole */
-int changed=0;          /* Set when file has been changed */
+TXTSIZ bufsiz;		/* Size of buffer */
+TXTPTR point;		/* The point */
+TXTPTR buffer;		/* The buffer */
+TXTPTR filend;		/* First character not in buffer */
+TXTPTR hole;		/* Beginning of hole */
+TXTPTR ehole;		/* First character not in hole */
+int changed=0;		/* Set when file has been changed */
+int nundorecs=0;
+struct undorec
+ {
+ struct undorec *next;
+ TXTSIZ size;
+ TXTSIZ where;
+ unsigned char *buffer;
+ }
+ *undorecs=0;
+struct undorec *undoptr=0;
+struct undorec *redorecs=0;
+int undoflag=1;
 
 fmopen()
 {
@@ -567,6 +583,10 @@ hole=buffer;
 ehole=buffer+HOLESIZE;
 filend=ehole;
 changed=0;
+undorecs=0;
+nundorecs=0;
+redorecs=0;
+undoptr=0;
 }
 
 fmexpand(amount)
@@ -635,23 +655,61 @@ while((point==ehole?point=hole:point)!=buffer)
 return 0;
 }
 
-
-int nundorecs=0;
-struct undorec
+killredo()
+{
+struct undorec *u;
+while(redorecs)
  {
- struct undorec *next;
- TXTSIZ size;
- TXTSIZ where;
- struct buffer *buf;
- unsigned char *buffer;
+ u=redorecs->next;
+ if(redorecs->buffer) free(redorecs->buffer);
+ free(redorecs);
+ redorecs=u;
  }
- *undorecs=0;
+}
+
+killundo()
+{
+struct undorec *u;
+while(undorecs)
+ {
+ if(undorecs->buffer) free(undorecs->buffer);
+ u=undorecs->next;
+ free(undorecs);
+ undorecs=u;
+ }
+}
 
 fminsu(size)
 TXTSIZ size;
 {
 struct window *z;
-if(undorecs) undorecs->buf=0;
+struct undorec *it;
+if(undoflag)
+ {
+ if(redorecs) killredo();
+ if(undorecs && !undorecs->buffer &&
+    (undorecs->where==fmnote() || undorecs->where+undorecs->size==fmnote()))
+  undorecs->size+=size;
+ else
+  {
+  /* New record */
+  it=(struct undorec *)malloc(sizeof(struct undorec));
+  it->next=undorecs;
+  undorecs=it;
+  it->size=size;
+  it->where=fmnote();
+  it->buffer=0;
+  ++nundorecs;
+  if(nundorecs==20)
+   {
+   struct undorec *p;
+   for(it=undorecs;it->next;p=it,it=it->next);
+   if(it->buffer) free(it->buffer);
+   free(it);
+   p->next=0;
+   }
+  }
+ }
 if(curbuf==markbuf)
  {
  if(fmnote()<markb) markb+=size;
@@ -677,57 +735,90 @@ do
  while(z!=topwin);
 }
 
-struct undorec *undoptr=0;
-int undoflag=1;
-
 undo()
 {
+struct undorec *u;
+if(!undorecs) return;
 extend=0;
-if(undoptr)
+if(!undoptr) undoptr=undorecs;
+if(fmnote()==undoptr->where)
  {
- undoflag=0;
- fmdel(undoptr->size);
- undoflag=1;
- undoptr=undoptr->next;
- if(!undoptr)
+ if(undoptr->buffer)
   {
-  marke=markb;
-  return;
+  undoflag=0;
+  fminss(undoptr->buffer,undoptr->size);
+  undoflag=1;
+  markbuf=curbuf;
+  markb=fmnote();
+  marke=markb+undoptr->size;
+  u=(struct undorec *)malloc(sizeof(struct undorec));
+  u->next=redorecs;
+  redorecs=u;
+  u->size=undoptr->size;
+  u->buffer=0;
+  u->where=fmnote();
   }
+ else
+  {
+  u=(struct undorec *)malloc(sizeof(struct undorec));
+  u->next=redorecs;
+  redorecs=u;
+  u->size=undoptr->size;
+  u->buffer=(unsigned char *)malloc(undoptr->size);
+  fmcpy(u->buffer,undoptr->size);
+  u->where=fmnote();
+  undoflag=0;
+  fmdel(undoptr->size);
+  markb=marke=0;
+  undoflag=1;
+  }
+ u=undoptr->next;
+ if(undoptr->buffer) free(undoptr->buffer);
+ free(undoptr);
+ undoptr=undorecs=u;
  }
-else undoptr=undorecs;
-fminss(undoptr->buffer,undoptr->size);
-markbuf=curbuf;
-markb=fmnote();
-marke=markb+undoptr->size;
+else fmpoint(undoptr->where), newy=1;
 }
 
 redo()
 {
+struct undorec *u;
+if(!redorecs) return;
 extend=0;
-if(undoptr)
+fmpoint(redorecs->where), newy=1;
+if(redorecs->buffer)
  {
  undoflag=0;
- fmdel(undoptr->size);
+ fminss(redorecs->buffer,redorecs->size);
  undoflag=1;
- if(undoptr==undorecs)
-  {
-  undoptr=0;
-  marke=markb;
-  return;
-  }
- else
-  {
-  struct undorec *p;
-  for(p=undorecs;p->next!=undoptr;p=p->next);
-  undoptr=p;
-  }
+ markbuf=curbuf;
+ markb=fmnote();
+ marke=markb+redorecs->size;
+ u=(struct undorec *)malloc(sizeof(struct undorec));
+ u->next=undorecs;
+ undorecs=undoptr=u;
+ u->size=redorecs->size;
+ u->buffer=0;
+ u->where=fmnote();
  }
-else for(undoptr=undorecs;undoptr->next;undoptr=undoptr->next);
-fminss(undoptr->buffer,undoptr->size);
-markbuf=curbuf;
-markb=fmnote();
-marke=markb+undoptr->size;
+else
+ {
+ u=(struct undorec *)malloc(sizeof(struct undorec));
+ u->next=undorecs;
+ undorecs=undoptr=u;
+ u->size=redorecs->size;
+ u->buffer=(unsigned char *)malloc(redorecs->size);
+ fmcpy(u->buffer,redorecs->size);
+ u->where=fmnote();
+ undoflag=0;
+ fmdel(redorecs->size);
+ markb=marke=0;
+ undoflag=1;
+ }
+u=redorecs->next;
+if(redorecs->buffer) free(redorecs->buffer);
+free(redorecs);
+redorecs=u;
 }
 
 fmdelu(size)
@@ -737,34 +828,31 @@ struct window *z;
 struct undorec *it;
 if(undoflag)
  {
- if(undorecs)
-  if(undorecs->buf==curbuf && (undorecs->where==fmnote()))
-   {
-   /* Add to end */
-   undorecs->buffer=(unsigned char *)realloc(undorecs->buffer,
-   undorecs->size+size);
-   fmcpy(undorecs->buffer+undorecs->size,size);
-   undorecs->size+=size;
-   }
-  else if(undorecs->buf==curbuf && (undorecs->where==fmnote()+size))
-   {
-   /* Add to beginning */
-   undorecs->buffer=(unsigned char *)realloc(
-   undorecs->buffer,undorecs->size+size);
-   bbkwd(undorecs->buffer+size,undorecs->buffer,undorecs->size);
-   fmcpy(undorecs->buffer,size);
-   undorecs->size+=size;
-   undorecs->where-=size;
-   }
-  else goto in;
+ if(redorecs) killredo();
+ if(undorecs && undorecs->buffer && (undorecs->where==fmnote()))
+  {
+  /* Add to end */
+  undorecs->buffer=(unsigned char *)realloc(undorecs->buffer,
+  undorecs->size+size);
+  fmcpy(undorecs->buffer+undorecs->size,size);
+  undorecs->size+=size;
+  }
+ else if(undorecs && undorecs->buffer && (undorecs->where==fmnote()+size))
+  {
+  /* Add to beginning */
+  undorecs->buffer=(unsigned char *)realloc(
+  undorecs->buffer,undorecs->size+size);
+  bbkwd(undorecs->buffer+size,undorecs->buffer,undorecs->size);
+  fmcpy(undorecs->buffer,size);
+  undorecs->size+=size;
+  undorecs->where-=size;
+  }
  else
   {
-  in:
   /* New record */
   it=(struct undorec *)malloc(sizeof(struct undorec));
   it->next=undorecs;
   undorecs=it;
-  it->buf=curbuf;
   it->size=size;
   it->where=fmnote();
   it->buffer=(unsigned char *)malloc(size);
@@ -774,7 +862,7 @@ if(undoflag)
    {
    struct undorec *p;
    for(it=undorecs;it->next;p=it,it=it->next);
-   free(it->buffer);
+   if(it->buffer) free(it->buffer);
    free(it);
    p->next=0;
    }
@@ -942,22 +1030,92 @@ hole+=amount;
 return amount==buf.st_size;
 }
 
+/* Output a message string which might possibly longer than width */
+/* if flg is set and the string is longer than the line, the cursor is
+ * left at the last position on the line.  If it is clear, the cursor may be
+ * elsewhere because of screen optimization. */
+/* if flg1 is set, attribute escape sequences \i and \u are taken to mean
+ * switch to inverse or switch to underline attributes
+ */
+
+msgout(row,str,flg,flg1)
+unsigned char *str;
+{
+int j=0, c, att=0;
+int *too=scrn+width*row;
+loop:
+if(j==width-1)
+ {
+ if(flg) cpos(row,j);
+ return;
+ }
+if(!*str)
+ {
+ hclreol:
+ cpos(row,j);
+ eputs("\033[K");
+ while(j!=width-1) *too++ =' ', ++j;
+ return;
+ }
+if(*str=='\\' && flg1 && (str[1]=='i' || str[1]=='u'))
+ {
+ ++str;
+ if(!*str) goto hclreol;
+ if(*str=='u')
+  {
+  att^=UNDERLINE;
+  ++str;
+  goto loop;
+  }
+ if(*str=='i')
+  {
+  att^=INVERSE;
+  ++str;
+  goto loop;
+  }
+ }
+c= showas(*str++) ^ att;
+if(c!= *too)
+ {
+ cpos(row,j);
+ tputcc(*too= c);
+ oxpos++;
+ }
+++too; ++j;
+goto loop;
+}
+
 int getl(prompt,dat)
 unsigned char *prompt;
 unsigned char *dat;
 {
-int ch,x;
-cpos(height-1,0);
-tattrib(' ');
-eputs(prompt);
-eputs(" (^C to abort): ");
-eputs(dat);
-eputs("\033[K");
-x=strlen(dat);
-oxpos=strlen(prompt)+x+21;
+int ch,x,y;
+int flag=0;
+unsigned char buf[PATHSIZE];
+strcpy(buf,prompt);
+strcat(buf," (^C to abort): ");
+y=strlen(buf);
+strcat(buf,dat);
+x=strlen(buf);
 while(1)
  {
+ if(x>width-1) msgout(height-1,buf+x-(width-1),1,0);
+ else msgout(height-1,buf,1,0);
  ch=anext();
+ if(ch=='`' && !flag)
+  {
+  flag=1;
+  continue;
+  }
+ if(ch>=32 && ch!=127 || flag)
+  {
+  if(flag && ch=='?') ch=127;
+  else if(flag && ch!='`') ch&=0x1f;
+  flag=0;
+  buf[x+1]=0, dat[x+1-y]=0;
+  buf[x]=ch, dat[x++-y]=ch;
+  continue;
+  }
  if(ch=='L'-'@')
   {
   ch= -1;
@@ -968,44 +1126,36 @@ while(1)
   ch=1;
   break;
   }
- if(ch>=32 && ch<127)
-  {
-  dat[x+1]=0;
-  dat[x++]=ch;
-  tputcc(ch);
-  oxpos++;
-  continue;
-  }
- if((ch==8 || ch==127) && x)
+ if((ch==8 || ch==127) && x-y)
   {
   x--;
-  dat[x]=0;
-  eputs("\010 \010");
-  oxpos--;
+  dat[x-y]=0;
+  buf[x]=0;
   continue;
   }
+/*
+ if(ch==9)
+  {
+  dat[x-y]=0;
+  docomplete(dat);
+  strcpy(buf+y,dat);
+  x=strlen(buf);
+  continue;
+  }
+*/
  if(ch==3)
   {
   ch=0;
   break;
   }
  }
-invalidate(height-1);
 return ch;
 }
 
 msg(ms)
 unsigned char *ms;
 {
-cpos(height-1,0);
-tattrib(' ');
-eputs(ms);
-eputc(' ');
-eputs("\033[K");
-oxpos=1+strlen(ms);
-if(ms[0]=='\033') oxpos-=7;
-eputs("\033[K");
-invalidate(height-1);
+msgout(height-1,ms,1,1);
 anext();
 }
 
@@ -1013,13 +1163,7 @@ int askyn(ms)
 unsigned char *ms;
 {
 int ch;
-cpos(height-1,0);
-tattrib(' ');
-eputs(ms);
-oxpos=strlen(ms);
-if(ms[0]=='\033') oxpos-=7;
-eputs("\033[K");
-invalidate(height-1);
+msgout(height-1,ms,1,1);
 up:
 ch=anext();
 switch(ch)
@@ -1045,44 +1189,25 @@ return ch;
 int query(ms)
 unsigned char *ms;
 {
-cpos(height-1,0);
-tattrib(' ');
-eputs(ms);
-oxpos=strlen(ms);
-if(ms[0]=='\033') oxpos-=7;
-eputs("\033[K");
-invalidate(height-1);
+msgout(height-1,ms,1,1);
 return anext();
 }
 
 int nquery(ms)
 unsigned char *ms;
 {
-cpos(height-1,0);
-tattrib(' ');
-eputs(ms);
-oxpos=strlen(ms);
-if(ms[0]=='\033') oxpos-=7;
-eputs("\033[K");
+msgout(height-1,ms,1,1);
 cpos(ypos,xpos);
-invalidate(height-1);
 return anext();
 }
 
 imsg()
 {
-unsigned char s[PATHSIZE];
-tattrib(' ');
-if(omsg)
- {
- eputs(omsg);
- invalidate(1);
- }
-sprintf(s,"\033[%d;1H\033[7m** Joe's Editor version 0.0.0 (1991) **          \
-                              \033[m\033[2H",height);
-eputs(s);
-invalidate(height-1);
+attrib(0);
+if(omsg) msgout(1,omsg,0,1);
 upd=1;
+msgout(height-1,"\\i** Joe's Own Editor version 0.1.5 (1991) **\\i",0,1);
+cpos(1,0);
 }
 
 int pic;
@@ -1225,7 +1350,7 @@ if(handle)
  {
  if(!fmsave(handle,fmsize()))
   {
-  sprintf(sting,"\033[7mError writing to file %s\033[m",tos);
+  sprintf(sting,"\\iError writing to file %s\\i",tos);
   msg(sting);
   fmpoint(temp);
   return(0);
@@ -1233,7 +1358,7 @@ if(handle)
  fmpoint(temp);
  if(fclose(handle)==EOF)
   {
-  sprintf(sting,"\033[7mError closing file %s\033[m",tos);
+  sprintf(sting,"\\iError closing file %s\\i",tos);
   msg(sting);
   fmpoint(temp);
   return(0);
@@ -1244,7 +1369,7 @@ if(handle)
  }
 else
  {
- sprintf(sting,"\033[7mError opening file %s\033[m",tos);
+ sprintf(sting,"\\iError opening file %s\\i",tos);
  msg(sting);
  fmpoint(temp);
  return(0);
@@ -1259,6 +1384,7 @@ oxpos= 0;
 oypos= 0;
 tops= 0;
 bots= height-1;
+smode=0;
 if(scroll) sprintf(s,"\033[m\033[1;%dr\033[H\033[J",height);
 else sprintf(s,"\033[m\033[H\033[J");
 eputs(s);
@@ -1292,7 +1418,9 @@ if(helpon)
  }
 else
  {
- hupd=1, wind=helplines;
+ if(helplines>height-3) wind=height-3;
+ else wind=helplines;
+ hupd=1;
  x=topwin;
  do
   {
@@ -1391,9 +1519,13 @@ fmgetc();
 
 ultarw()
 {
+if(extend)
+ {
+ extend=0;
+ return;
+ }
 fillup();
-if(extend) extend=0;
-else if(fmnote())
+if(fmnote())
  {
  fmpoint(fmnote()-1);
  if(fmrc()==NL)
@@ -1407,14 +1539,15 @@ else if(fmnote())
 
 ltarw()
 {
-fillup();
-if(extend) extend=0;
-else
+if(extend)
  {
- if(fmnote())
-  fmpoint(fmnote()-1);
- if(fmrc()==NL) newy=1;
+ extend=0;
+ return;
  }
+fillup();
+if(fmnote())
+ fmpoint(fmnote()-1);
+if(fmrc()==NL) newy=1;
 }
 
 /* Move cursor up */
@@ -1451,7 +1584,7 @@ if(scroll)
    saddr=fmnote();
    setregn(curwin->wind+1,curwin->wind+(curwin->height-1));
    cpos(curwin->wind+1,oxpos);
-   tattrib(' ');
+   attrib(0);
    eputs("\033M");
    for(x=(curwin->wind+curwin->height)*width-1;x>=y+width;x--)
     scrn[x]=scrn[x-width];
@@ -1508,7 +1641,7 @@ if(scroll)
  saddr=fmnote();
  setregn(curwin->wind+1,curwin->wind+curwin->height-1);
  cpos((curwin->wind+curwin->height-1),oxpos);
- tattrib(' ');
+ attrib(0);
  eputc(10);
  for(x=(curwin->wind+1)*width;x!=(curwin->wind+curwin->height-1)*width;x++)
   scrn[x]=scrn[x+width];
@@ -1621,7 +1754,7 @@ if(!fmeof())
    x<(curwin->wind+curwin->height)*width;x++) scrn[x]= ' ';
    setregn(ypos+1,(curwin->wind+curwin->height-1));
    cpos((curwin->wind+curwin->height-1),oxpos);
-   tattrib(' ');
+   attrib(0);
    eputc(10);
    }
   fmdel(1);
@@ -1669,7 +1802,7 @@ if(ch==NL)
     {
     setregn(ypos+1,(curwin->wind+curwin->height-1));
     cpos(ypos+1,oxpos);
-    tattrib(' ');
+    attrib(0);
     eputs("\033M");
     cpos(ypos+1,0);
     for(x=(curwin->wind+curwin->height)*width-1;x>=(ypos+2)*width;x--)
@@ -1685,7 +1818,7 @@ if(ch==NL)
    {
    setregn(curwin->wind+1,(curwin->wind+curwin->height-1));
    cpos((curwin->height+curwin->wind-1),0);
-   tattrib(' ');
+   attrib(0);
    eputc(10);
    for(x=curwin->wind*width;x<(curwin->wind+curwin->height-1)*width;x++)
     scrn[x]=scrn[x+width];
@@ -1779,7 +1912,7 @@ else
   unsigned char xx;
   if(getrcol()<rmargin) goto skip;
   if(ch==' ')
-   type(NL);
+   fminsc(' '), rtarw();
   else
    {
    temp=fmnote();
@@ -1819,10 +1952,11 @@ skip:
    }
   if(ch!=TAB && ch!=NL)
    {
-   if(fmnote()>=markb && fmnote()<marke) ch^=128;
+   int cc=showas(ch);
+   if(fmnote()>=markb && fmnote()<marke) cc^=INVERSE;
    fmgetc();
-   tputcc(ch);
-   scrn[ypos*width+oxpos]=ch;
+   tputcc(cc);
+   scrn[ypos*width+oxpos]=cc;
    oxpos++;
    if(fmeof()) { if(!eflag && ox<width-2) uuu=1; }
    else if(fmrc()==NL && !eflag && ox<width-2) uuu=1;
@@ -1877,7 +2011,7 @@ else
   {
   if(getrcol()<rmargin) goto skip;
   if(ch==' ')
-   itype(NL);
+   fminsc(' '), rtarw();
   else
    {
    temp=fmnote();
@@ -1981,13 +2115,16 @@ if(curwin->next==curwin)
   c=askyn("Do you really want to throw away this file?");
   if(c=='N') return;
   if(c== -1) return;
-  dclose("File not saved.");
+  leave=1;
+  dclose();
+  eputs("\nFile not saved.\r\n");
   }
  else
   {
-  dclose("File not changed so no update needed");
+  leave=1;
+  dclose();
+  eputs("\nFile not changed so no update needed\r\n");
   }
- leave=1;
  }
 else
  {
@@ -2000,8 +2137,8 @@ else
   }
  if(curbuf->count==1)
   {
-  struct undorec *u;
-  for(u=undorecs;u;u=u->next) if(u->buf==curbuf) u->buf=0;
+  killundo();
+  killredo();
   free(curbuf->buf), free(curbuf);
   if(curbuf==markbuf) markbuf=0;
   }
@@ -2045,7 +2182,7 @@ saddr=fmnote();
 fmpoint(curpos);
 setregn(curwin->wind+1,(curwin->wind+curwin->height-1));
 cpos(curwin->wind+1,oxpos);
-tattrib(' ');
+attrib(0);
 for(y=0;y<x;y++)
  {
  if(scroll) eputs("\033M");
@@ -2100,7 +2237,7 @@ saddr=fmnote();
 setregn(curwin->wind+1,(curwin->wind+curwin->height-1));
 cpos((curwin->wind+curwin->height-1),oxpos);
 fmpoint(curpos);
-tattrib(' ');
+attrib(0);
 for(y=0;y<x;y++)
  {
  fmfnl();
@@ -2134,6 +2271,16 @@ fmpoint(temp);
 if(temp1) fmdel(temp1);
 }
 
+killlin()
+{
+extend=0;
+if(!fmeof())
+ {
+ if(fmrc()==NL) delch();
+ else deleol();
+ }
+}
+
 dellin()
 {
 bol();
@@ -2153,7 +2300,14 @@ if(*s=='~')
  if(c= *p)
   {
   *p=0;
-  if(passwd=getpwnam(s+1))
+  if(!s[1])
+   {
+   *p=c;
+   strcpy(tmp,getenv("HOME"));
+   strcat(tmp,p);
+   strcpy(s,tmp);
+   }
+  else if(passwd=getpwnam(s+1))
    {
    *p=c;
    strcpy(tmp,passwd->pw_dir);
@@ -2163,6 +2317,76 @@ if(*s=='~')
   }
  }
 }
+
+/*
+
+struct list
+ {
+ struct list *next;
+ unsigned char *name;
+ };
+
+unsigned char *complete(list,name)
+struct list *list;
+unsigned char *name;
+{
+struct list *found=0;
+int x;
+while(list)
+ {
+ for(x=0;name[x] && list->name[x];++x) if(name[x]!=list->name[x]) goto next;
+ if(found) return 0;
+ found=list;
+ next:
+ list=list->next;
+ }
+if(found) return found->name;
+else return 0;
+}
+
+struct list *getnames(name)
+unsigned char *name;
+{
+DIR *dir=opendir(name);
+struct direct *dirent;
+struct list *first=0, *next=0;
+if(dir)
+ {
+ while(dirent=readdir(dir))
+  {
+  if(next) next=next->next=malloc(sizeof(struct list));
+  else first=next=malloc(sizeof(struct list));
+  next->next=0;
+  next->name=strdupp(dirent->d_name);
+  }
+ closedir(dir);
+ }
+return first;
+}
+
+rmlist(list)
+struct list *list;
+{
+struct list *nxt;
+if(list)
+ do
+  nxt=list->next, free(list);
+  while(list=nxt);
+}
+
+docomplete(s)
+unsigned char *s;
+{
+struct list *list=getnames(".");
+unsigned char *name;
+if(!list) return;
+name=complete(list,s);
+if(name) strcpy(s,name);
+else eputc(7);
+rmlist(list);
+}
+
+*/
 
 exsave()
 {
@@ -2187,11 +2411,12 @@ else if(!backup)
  }
 if(saveit1(gfnam))
  {
- sprintf(sting,"File %s saved.",gfnam);
+ sprintf(sting,"\nFile %s saved.\r\n",gfnam);
  if(curwin->next==curwin)
   {
-  dclose(sting);
   leave=1;
+  dclose();
+  eputs(sting);
   }
  else
   eexit();
@@ -2206,6 +2431,7 @@ strcpy(gfnam1,gfnam);
 if(!getl("Save file",gfnam1))
  return;
 fixpath(gfnam1);
+if(!gfnam1[0]) return;
 if(!backup && !strcmp(gfnam1,gfnam))
  {
  sprintf(sting,"/bin/cp %s %s~",gfnam,gfnam);
@@ -2226,7 +2452,7 @@ if(!getl("Goto line",sting))
 x=atol(sting);
 if(!x)
  {
- msg("\033[7mBad line number\033[m");
+ msg("\\iBad line number\\i");
  return;
  }
 x--;
@@ -2239,6 +2465,17 @@ for(;x;x--)
 newy=1;
 cntr=1;
 return;
+}
+
+repeat()
+{
+unsigned char sting[PATHSIZE];
+TXTSIZ x;
+sting[0]=0;
+if(!getl("Repeat",sting))
+ return;
+x=atol(sting);
+nrepeatamnt=x;
 }
 
 int search()
@@ -2415,7 +2652,7 @@ if(markbuf)
  }
 if(markb>=marke || marke>fmsize() || !markbuf)
  {
- msg("\033[7mThe block is not marked properly\033[m  Mark it with ^KB & ^KK");
+ msg("\\iNo block\\i");
  if(markbuf)
   ldbuf(bt);
  return;
@@ -2433,7 +2670,7 @@ if(handle)
  fmpoint(markb);
  if(!fmsave(handle,marke-markb))
   {
-  sprintf(sting,"\033[7mError writting to file %s\033[m",gfnam1);
+  sprintf(sting,"\\iError writting to file %s\\i",gfnam1);
   msg(sting);
   }
  stbuf(markbuf);
@@ -2444,9 +2681,103 @@ if(handle)
 else
  {
  ldbuf(bt);
- sprintf(sting,"\033[7mError opening file %s\033[m",gfnam1);
+ sprintf(sting,"\\iError opening file %s\\i",gfnam1);
  msg(sting);
  }
+}
+
+cmdblk()
+{
+unsigned char ch;
+int fr[2];
+int fw[2];
+unsigned char gfnam1[PATHSIZE];
+unsigned char sting[PATHSIZE];
+TXTSIZ sv=fmnote(), sz;
+struct buffer *bt=curbuf;
+if(markbuf)
+ {
+ stbuf(curbuf);
+ ldbuf(markbuf);
+ }
+if(markb>=marke || marke>fmsize() || !markbuf)
+ {
+ marke=markb=0;
+ markbuf=bt;
+ }
+gfnam1[0]=0;
+if(markb==marke)
+ {
+ if(!getl("Command to capture:",gfnam1))
+  {
+  ldbuf(bt);
+  return;
+  }
+ }
+else if(!getl("Command to pipe block through:",gfnam1))
+ {
+ ldbuf(bt);
+ return;
+ }
+fixpath(gfnam1);
+pipe(fr);
+pipe(fw);
+dclose();
+eputc('\n');
+aclose();
+if(!fork())
+ {
+ signorm();
+ printf("%s\n",gfnam1);
+ if(markb!=marke) close(0);
+ close(1);
+ if(markb!=marke) dup(fw[0]);
+ dup(fr[1]);
+ close(fw[0]);
+ close(fr[1]);
+ close(fw[1]);
+ close(fr[0]);
+ execl("/bin/sh","/bin/sh","-c",gfnam1,0);
+ exit(0);
+ }
+close(fr[1]);
+close(fw[0]);
+if(fork())
+ {
+ if(bt==markbuf) if(sv>=markb && sv<marke) sv=markb;
+ sz=marke-markb;
+ fmpoint(markb);
+ if(sz) fmdel(sz);
+ if(bt==markbuf) if(sv>markb) sv-=sz;
+ close(fw[1]);
+ stbuf(markbuf);
+ ldbuf(bt);
+ fmpoint(sv);
+ markbuf=bt;
+ markb=sv;
+ while(1==read(fr[0],&ch,1)) putchar(ch), fminsc(ch), fmgetc();
+ fflush(stdout);
+ close(fr[0]);
+ marke=fmnote();
+ fmpoint(markb);
+ wait(0);
+ wait(0);
+ }
+else
+ {
+ fmpoint(markb);
+ while(fmnote()!=marke)
+  {
+  ch=fmgetc();
+  write(fw[1],&ch,1);
+  }
+ close(fw[1]);
+ _exit(-1);
+ }
+aopen();
+rewrite();
+updall=1;
+newy=1;
 }
 
 delblk()
@@ -2461,7 +2792,7 @@ if(markbuf)
  }
 if(marke<=markb || marke>fmsize() || !markbuf)
  {
- msg("\033[7mThe block is not marked properly\033[m  Mark it with ^KB & ^KK");
+ msg("\\iNo block\\i");
  if(markbuf)
   ldbuf(bt);
  return;
@@ -2490,7 +2821,7 @@ if(markbuf)
  }
 if(marke<=markb || marke>fmsize() || !markbuf)
  {
- msg("\033[7mThe block is not marked properly\033[m  Mark it with ^KB & ^KK");
+ msg("\\iNo block\\i");
  if(markbuf)
   ldbuf(bt);
  return;
@@ -2531,7 +2862,7 @@ if(markbuf)
  }
 if(marke<=markb || marke>fmsize() || !markbuf)
  {
- msg("\033[7mThe block is not marked properly\033[m  Mark it with ^KB & ^KK");
+ msg("\\iNo block\\i");
  if(markbuf)
   ldbuf(bt);
  return;
@@ -2563,7 +2894,7 @@ if(handle)
  {
  if(!fminsfil(handle))
   {
-  sprintf(sting,"\033[7mError inserting file %s\033[m",gfnam1);
+  sprintf(sting,"\\iError inserting file %s\\i",gfnam1);
   msg(sting);
   }
  newy=1;
@@ -2571,7 +2902,7 @@ if(handle)
  }
 else
  {
- sprintf(sting,"\033[7mError opening file %s\033[m",gfnam1);
+ sprintf(sting,"\\iError opening file %s\\i",gfnam1);
  msg(sting);
  return;
  }
@@ -2579,15 +2910,40 @@ else
 
 push()
 {
-unsigned char *ssh=(unsigned char *)getenv("SHELL");
-if(!ssh)
- {
- msg("Couldn't find shell");
- return;
- }
-dclose("You are at the command shell.  Type 'exit' to continue editing");
-shell(ssh);
+leave=1;
+dclose();
+shell();
+leave=0;
 rewrite();
+}
+
+suspend()
+{
+leave=1;
+dclose();
+susp();
+leave=0;
+rewrite();
+}
+
+ioverwrite() { overwrite= !overwrite; }
+iwrap() { wrap= !wrap; }
+iautoind() { autoind= !autoind; }
+itabmagic() { tabmagic= !tabmagic; }
+ipic() { pic= !pic; }
+ooverwrite() { overwrite=0; }
+owrap() { wrap=0; }
+oautoind() { autoind=0; }
+otabmagic() { tabmagic=0; }
+opic() { pic=0; }
+
+setrmargin()
+{
+unsigned char sting[80];
+sprintf(sting,"%d",rmargin);
+if(!getl("Right margin",sting)) return;
+rmargin=atol(sting);
+if(rmargin<2) rmargin=2;
 }
 
 mode()
@@ -2611,33 +2967,27 @@ switch(query(s))
  case 'I':
  case 'o':
  case 'O':
-  overwrite= !overwrite;
+  ioverwrite();
   break;
  case 'W':
  case 'w':
-  wrap= !wrap;
+  iwrap();
   break;
  case 'a':
  case 'A':
-  autoind= !autoind;
+  iautoind();
   break;
  case 't':
  case 'T':
-  tabmagic= !tabmagic;
+  itabmagic();
   break;
  case 'p':
  case 'P':
-  pic= !pic;
+  ipic();
   break;
  case 'r':
  case 'R':
-  {
-  char sting[80];
-  sprintf(sting,"%d",rmargin);
-  if(!getl("Right margin",sting)) return;
-  rmargin=atol(sting);
-  if(rmargin<2) rmargin=2;
-  }
+  setrmargin();
  }
 }
 
@@ -2666,8 +3016,10 @@ pic=tmp;
 
 reformat()
 {
-TXTSIZ tmp,idt,idt1,b,e;
+TXTSIZ tmp,idt,idt1,b,e,cur,ncur= -1;
 unsigned char ch;
+
+cur=fmnote();		/* Save cursor position */
 
 /* First, determine indentation on current or first non-blank line */
 
@@ -2746,12 +3098,14 @@ if(e>b)
  unsigned flag=0;
  unsigned char ccc=0;
  TXTSIZ ppp=b;
+ undoflag=0;
  overwrite=0;
  wrap=1;
  while(ppp!=e)
   {
   tmp=fmnote();
   fmpoint(ppp);
+  if(ppp>=cur && ncur== -1) ncur=tmp;
   ppp++;
   ch=fmrc();
   fmpoint(tmp);
@@ -2759,12 +3113,13 @@ if(e>b)
   if(ch==' ' || ch==TAB)
    {
    if(flag==0) itype(ch);
-   else if(flag==1)
+   else if(flag==1 && ch!='\t')
      {
      itype(' ');
      if(!(ccc=='.' || ccc==':' || ccc=='?' || ccc=='!' || ccc=='\"' ||
           ccc==';')) flag=2;
      }
+   else if(ch=='\t') itype('\t');
    }
   else
    {
@@ -2775,13 +3130,34 @@ if(e>b)
   }
  autoind=0;
  if(flag) itype(NL);
+ /* Make undo record for entered paragraph */
+  {
+  /* New record */
+  struct undorec *it=(struct undorec *)malloc(sizeof(struct undorec));
+  if(redorecs) killredo();
+  it->next=undorecs;
+  undorecs=it;
+  it->size=fmnote()-e;
+  it->where=e;
+  it->buffer=0;
+  ++nundorecs;
+  if(nundorecs==20)
+   {
+   struct undorec *p;
+   for(it=undorecs;it->next;p=it,it=it->next);
+   if(it->buffer) free(it->buffer);
+   free(it);
+   p->next=0;
+   }
+  }
+
+ undoflag=1;
  wrap=oldwrap;
  overwrite=oldoverwrite;
  autoind=oldauto;
- tmp=fmnote();
  fmpoint(b);
  fmdel(e-b);
- fmpoint(tmp-(e-b));
+ fmpoint(ncur-(e-b));
  newy=1;
  }
 }
@@ -3065,6 +3441,10 @@ filend=zuffer->filend;
 hole=zuffer->hole;
 ehole=zuffer->ehole;
 changed=zuffer->changed;
+undorecs=zuffer->undorecs;
+nundorecs=zuffer->nundorecs;
+redorecs=zuffer->redorecs;
+undoptr=0;
 }
 
 ldbuf1(zuffer)
@@ -3079,6 +3459,10 @@ filend=zuffer->filend;
 hole=zuffer->hole;
 ehole=zuffer->ehole;
 changed=zuffer->changed;
+undorecs=zuffer->undorecs;
+redorecs=zuffer->redorecs;
+nundorecs=zuffer->nundorecs;
+undoptr=0;
 }
 
 stbuf(zuffer)
@@ -3092,6 +3476,10 @@ zuffer->filend=filend;
 zuffer->hole=hole;
 zuffer->ehole=ehole;
 zuffer->changed=changed;
+zuffer->undorecs=undorecs;
+zuffer->nundorecs=nundorecs;
+zuffer->redorecs=redorecs;
+undoptr=0;
 }
 
 ldwin(window)
@@ -3136,9 +3524,9 @@ up:
 total=height-wind;
 for(x=topwin;1;x=x->next)
  {
- if(x->height<2) x->height=2;
- if(curwin==x && total>=2) break;
- if(total<2) goto in;
+ if(x->height<3) x->height=3;
+ if(curwin==x && total>=3) break;
+ if(total<3) goto in;
  total-=x->height;
  if(total<0)
   {
@@ -3150,7 +3538,7 @@ for(x=topwin;1;x=x->next)
 for(x=topwin,total=wind;1;x=x->next)
  {
  x->wind=total;
- if(x->height<2) x->height=2;
+ if(x->height<3) x->height=3;
  total+=x->height;
  if(total>=height || x->next==topwin)
   {
@@ -3198,7 +3586,7 @@ else
  { /* Show all windows */
  x=topwin; y=0;
  do y++, x=x->next; while(x!=topwin);
- if((height-wind)/y<2) y=2;
+ if((height-wind)/y<3) y=3;
  else y=(height-wind)/y;
  x=topwin;
  do x->height=y, x=x->next; while(x!=topwin);
@@ -3210,12 +3598,12 @@ wgrow()
 {
 if(curwin->wind+curwin->height==height)
  {
- if(curwin->wind!=wind) if(curwin->prev->height>2)
+ if(curwin->wind!=wind) if(curwin->prev->height>3)
   curwin->prev->height--, curwin->height++, curwin->wind--, updall=1;
  }
 else
  {
- if(curwin->next->height>2)
+ if(curwin->next->height>3)
   curwin->height++, curwin->next->wind++, curwin->next->height--, updall=1;
  }
 newy=1;
@@ -3225,12 +3613,12 @@ wshrink()
 {
 if(curwin->wind+curwin->height==height)
  {
- if(curwin->wind!=wind) if(curwin->height>2)
+ if(curwin->wind!=wind) if(curwin->height>3)
  curwin->height--, curwin->prev->height++, curwin->wind++, updall=1;
  }
 else
  {
- if(curwin->height>2)
+ if(curwin->height>3)
  curwin->height--, curwin->next->wind--, curwin->next->height++, updall=1;
  }
 newy=1;
@@ -3239,7 +3627,7 @@ newy=1;
 wsplit()
 {
 struct window *new;
-if(curwin->height<4) return;
+if(curwin->height<6) return;
 new=(struct window *)malloc(sizeof(struct window));
 new->buffer=curbuf;
 stwin(new);
@@ -3297,6 +3685,8 @@ do
   {
   if(curbuf->count==1)
    {
+   killredo();
+   killundo();
    free(curbuf->buf), free(curbuf);
    if(curbuf==markbuf) markbuf=0;
    }
@@ -3311,7 +3701,6 @@ do
  x=x->next;
  }
  while(x!=topwin);
-handle=fopen(gfnam1,"r");
 strcpy(gfnam,gfnam1);
 stmode(gfnam);
 if(curbuf->count==1) free(curbuf->buf),
@@ -3322,11 +3711,12 @@ curbuf=curwin->buffer;
 curbuf->count=1;
 fmopen();
 bof();
+handle=fopen(gfnam1,"r");
 if(handle)
  {
  if(!fminsfil(handle))
   {
-  sprintf(sting,"\033[7mError inserting file %s\033[m",gfnam1);
+  sprintf(sting,"\\iError loading file %s\\i",gfnam1);
   msg(sting);
   }
  changed=0;
@@ -3337,16 +3727,20 @@ else
  {
  newy=1;
  upd=1;
- dupdate();
  if(errno==ENOENT)
   {
-  eputs("New File\r");
+  dupdate();
+  msgout(curwin->wind+1,"New File",0,0);
+  cpos(curwin->wind+1,0);
   backup=1;
   }
  else
-  eputs("\033[7mError opening file\033[m\r");
- invalidate(curwin->wind+1);
- dokey(anext());
+  {
+  dupdate();
+  msgout(curwin->wind+1,"\\iError opening file\\i",0,1);
+  cpos(curwin->wind+1,0);
+  }
+ noupdate=1;
  return;
  }
 }
@@ -3366,7 +3760,7 @@ stquote8th()
 quote8th=1;
 }
 
-CMD kkm[54]=
+CMD kkm[73]=
 {
  {"uparw",0,uuparw},
  {"rtarw",0,urtarw},
@@ -3401,12 +3795,12 @@ CMD kkm[54]=
  {"exsave",0,exsave},
  {"delblk",0,delblk},
  {"push",0,push},
+ {"suspend",0,suspend},
  {"eexit",0,eexit},
  {"delch",0,delch},
  {"inss",0,inss},
  {"backs",0,backs},
  {"type",0,type},
- {"deleol",0,deleol},
  {"rtn",0,rtn},
  {"backword",0,backword},
  {"rewrite",0,rewrite},
@@ -3421,16 +3815,100 @@ CMD kkm[54]=
  {"indentl",0,indentl},
  {"indentr",0,indentr},
  {"undo",0,undo},
- {"redo",0,redo}
+ {"redo",0,redo},
+ {"killlin",0,killlin},
+ {"deleol",0,deleol},
+ {"ioverwrite",0,ioverwrite},
+ {"iwrap",0,iwrap},
+ {"iautoind",0,iautoind},
+ {"itabmagic",0,itabmagic},
+ {"ipic",0,ipic},
+ {"ooverwrite",0,ooverwrite},
+ {"owrap",0,owrap},
+ {"oautoind",0,oautoind},
+ {"otabmagic",0,otabmagic},
+ {"opic",0,ipic},
+ {"setrnargin",0,setrmargin},
+ {"cmdblk",0,cmdblk},
+ {"repeat",0,repeat},
+ {"macrob",0,macrob},
+ {"macroe",0,macroe},
+ {"macrodo",0,macrodo},
+ {"wait",0,waite}
  };
 
-CONTEXT km={0, "main", 0, 54, kkm};
+CONTEXT km={0, "main", 0, 73, kkm};
 
 /** Key sequence processing functions **/
 
 struct kmap *curmap;
 int quoteflg=0;
 int quote8th=0;
+
+int record=0;
+unsigned char *kmacro=0;
+int kmacrox=0;
+int kmacrosz=0;
+
+int macroadd(c)
+unsigned char c;
+{
+if(kmacrox+3>=kmacrosz)
+ if(kmacro) kmacro=(unsigned char *)realloc(kmacro,kmacrosz+=10);
+ else kmacro=(unsigned char *)malloc(kmacrosz=10);
+if(c=='\\')
+ {
+ kmacro[kmacrox++]='\\';
+ kmacro[kmacrox++]='\\';
+ }
+else
+ kmacro[kmacrox++]=c;
+kmacro[kmacrox]=0;
+}
+
+macrob()
+{
+kmacrox=0;
+record=1;
+}
+
+macroe()
+{
+record=0;
+}
+
+macrodo()
+{
+int z=repeatamnt;
+if(record) return;
+repeatamnt=1;
+nrepeatamnt=1;
+take=kmacro;
+waite();
+repeatamnt=z;
+}
+
+int *runfuncs;
+int rsize=0;
+int rptr=0;
+
+isrunning(r,n)
+{
+int z;
+for(z=0;z!=rptr;z+=2) if(r==runfuncs[z] && n==runfuncs[z+1]) return 1;
+return 0;
+}
+
+pop() { rptr-=2; }
+
+running(r,n)
+{
+if(rsize==rptr)
+ if(rsize) runfuncs=(int *)realloc(runfuncs,sizeof(int)*(rsize+=10));
+ else runfuncs=(int *)malloc(sizeof(int)*(rsize=10));
+runfuncs[rptr++]=r;
+runfuncs[rptr++]=n;
+}
 
 int dokey(k)
 unsigned char k;
@@ -3460,17 +3938,50 @@ do
    }
   else
    {
+   int h=height, w=width, zz, rpt=repeatamnt;
+   getsize();
+   if(h!=height || w!=width) resize();
    r=curmap;
    curmap=km.kmap;
-   if(km.cmd[r->keys[new].n].func!=redo &&
-      km.cmd[r->keys[new].n].func!=undo) undoptr=0;
-   km.cmd[r->keys[new].n].func(k);
+   nrepeatamnt=1;
+   while(rpt--)
+    {
+    if(rpt>1 && have)
+     {
+     anext();
+     msg("Repeat aborted");
+     undoptr=0;
+     break;
+     }
+    if(isrunning(r,new)) undoptr=0, type(k);
+    else
+     {
+     running(r,new);
+     for(zz=0;r->keys[new].n[zz]!= -1;zz+=2)
+      {
+      if(r->keys[new].n[zz])
+       {
+       take=(unsigned char *)r->keys[new].n[zz+1];
+       }
+      else
+       {
+       if(km.cmd[r->keys[new].n[zz+1]].func!=redo &&
+          km.cmd[r->keys[new].n[zz+1]].func!=undo) undoptr=0;
+       km.cmd[r->keys[new].n[zz+1]].func(k);
+       if(leave) goto abcd;
+       }
+      }
+     pop();
+     }
+    }
    abcd:
+   repeatamnt=nrepeatamnt;
    if(!leave)
     {
     if(!uuu) upd=1;
     else uuu=0;
-    dupdate();
+    if(!noupdate) dupdate();
+    else noupdate=0;
     }
    return 0;
    }
@@ -3501,6 +4012,15 @@ do
  while(!leave);
 }
 
+int waite()
+{
+while(take && *take)
+ {
+ dokey(anext());
+ if(leave) break;
+ }
+}
+
 struct mpair
  {
  struct mpair *next;
@@ -3528,6 +4048,7 @@ while(mp)
   overwrite=mp->overwrite;
   pic=mp->pic;
   tabmagic=mp->tabmagic;
+  rmargin=mp->rmargin;
   break;
   }
  else mp=mp->next;
@@ -3541,17 +4062,34 @@ CONTEXT *context=0;
 unsigned char buf[PATHSIZE];
 KMAP *kmap;
 FILE *fd=fopen(name,"r");
-int x,y,n,z;
+int x,y,n,z,macrox,macrosize,*macro,macroc;
 if(!fd) return -1;
 printf("Processing keymap file %s ...",name);
 fflush(stdout);
 while(fgets(buf,256,fd))
  {
+ if(buf[0]=='{')
+  {
+  up:
+  if(!fgets(buf,256,fd)) break;
+  if(buf[0]=='}') continue;
+  if(helpsize+strlen(buf)>helpblksize)
+   {
+   if(help) help=(unsigned char *)realloc(help,helpblksize+strlen(buf)+320);
+   else help=(unsigned char *)calloc(1,strlen(buf)+320);
+   helpblksize+=strlen(buf)+320;
+   }
+  strcat(help,buf);
+  helpsize=strlen(help);
+  ++helplines;
+  goto up;
+  }
  if(buf[0]=='*')
   {
   struct mpair *mp=(struct mpair *)calloc(sizeof(struct mpair),1);
   int c=0;
   mp->next=mpairs;
+  mp->rmargin=76;
   mpairs=mp;
   for(x=0;buf[x];x++)
    if(buf[x]==' ' || buf[x]=='\t' || buf[x]=='\n')
@@ -3581,6 +4119,12 @@ while(fgets(buf,256,fd))
    case 'p':
    case 'P': mp->pic=1;
    break;
+   case '0': case '1': case '2': case '3': case '4': case '5': case '6':
+   case '7': case '8': case '9':
+   mp->rmargin=buf[x++]-'0';
+   while(buf[x]>='0' && buf[x]<='9') mp->rmargin=mp->rmargin*10+buf[x++]-'0';
+   --x;
+   break;
    case 't':
    case 'T': mp->tabmagic=1;
     }
@@ -3608,22 +4152,88 @@ while(fgets(buf,256,fd))
    }
   continue;
   }
- for(x=0;buf[x];x++) if(buf[x]==' ' || buf[x]=='\t' || buf[x]=='\n') break;
+ for(x=0;buf[x];x++) if(buf[x]==' ' || buf[x]=='\t' || buf[x]=='\n' ||
+                        buf[x]==',') break;
  if(buf[0]==' ' || buf[0]=='\t' || buf[0]=='\n' || !buf[x]) continue;
  if(!context)
   {
   printf("No context selected for key\n");
   return -1;
   }
- buf[x]=0;
- for(y=0;y!=context->size;y++)
-   if(!strcmp(context->cmd[y].name,buf)) goto foundit;
- printf("Key function not found %s\n",buf);
- continue;
- foundit:
+ if(buf[0]=='\"')
+  {
+  int q;
+  x=0;
+  for(q= ++x;buf[q];++q)
+   if(buf[q]=='\"' && buf[q-1]!='\\' || buf[q]=='\n') break;
+  macroc=buf[q]; buf[q]=0;
+  macro=(int *)malloc(sizeof(int)*2);
+  macrosize=2;
+  macrox=0;
+  macro[macrox++]=1;
+  macro[macrox++]=(int)strdupp(buf+x);
+  buf[q]=macroc;
+  if(macroc=='\"') x=q+1;
+  else x=q;
+  }
+ else
+  {
+  macroc=buf[x];
+  buf[x]=0;
+  for(y=0;y!=context->size;y++)
+    if(!strcmp(context->cmd[y].name,buf)) goto foundit;
+  printf("Key function not found %s\n",buf);
+  continue;
+  foundit:
+
+  macro=(int *)malloc(sizeof(int)*2);
+  macro[0]=0;
+  macro[1]=y;
+  macrox=2;
+  macrosize=2;
+  buf[x]=macroc;
+  }
+
+ fn:
+ if(buf[x]==',')
+  if(buf[++x]=='\"')
+   {
+   int q;
+   for(q= ++x;buf[q];++q)
+    if(buf[q]=='\"' && buf[q-1]!='\\' || buf[q]=='\n') break;
+   macroc=buf[q]; buf[q]=0;
+   if(macrox==macrosize) macro=(int *)realloc(macro,sizeof(int)*(macrosize+=2));
+   macro[macrox++]=1;
+   macro[macrox++]=(int)strdupp(buf+x);
+   buf[q]=macroc;
+   if(macroc=='\"') x=q+1;
+   else x=q;
+   goto fn;
+   }
+  else
+   {
+   int q;
+   for(q=x;buf[q];++q) if(buf[q]=='\t' || buf[q]==' ' || buf[q]==',') break;
+   macroc=buf[q]; buf[q]=0;
+   for(y=0;y!=context->size;++y)
+    if(!strcmp(context->cmd[y].name,buf+x)) goto ff;
+   printf("Key function not found %s\n",buf+x);
+   free(macro);
+   continue;
+   ff:
+   if(macrox==macrosize) macro=(int *)realloc(macro,sizeof(int)*(macrosize+=2));
+   macro[macrox++]=0;
+   macro[macrox++]=y;
+   buf[q]=macroc; x=q;
+   goto fn;
+   }
+
+ if(macrox==macrosize) macro=(int *)realloc(macro,sizeof(int)*(++macrosize));
+ macro[macrox]= -1;
+
  kmap=0;
  n= -1;
- for(++x;buf[x];x++) if(buf[x]!=' ' && buf[x]!='\t') break;
+ for(;buf[x];x++) if(buf[x]!=' ' && buf[x]!='\t') break;
  while(1)
   {
   int c;
@@ -3654,7 +4264,7 @@ while(fgets(buf,256,fd))
    if(kmap->keys[n].k&KEYSUB) kmap=(KMAP *)(kmap->keys[n].n);
    else
     {
-    kmap->keys[n].n=(unsigned)malloc(sizeof(KMAP));
+    kmap->keys[n].n=(int *)malloc(sizeof(KMAP));
     kmap->keys[n].k|=KEYSUB;
     kmap=(KMAP *)(kmap->keys[n].n);
     kmap->keys=(KEY *)malloc(4*sizeof(KEY));
@@ -3669,7 +4279,7 @@ while(fgets(buf,256,fd))
   for(z=kmap->len;z!=n;z--) kmap->keys[z]=kmap->keys[z-1];
   kmap->len++;
   kmap->keys[n].k=c;
-  kmap->keys[n].n=y;
+  kmap->keys[n].n=macro;
   sub:;
   }
  }
@@ -3702,7 +4312,7 @@ curmap=km.kmap;
 if(argc>2)
  {
  fputs("\nIllegal number of command line arguments",stderr);
- fputs("\nEditor Command Format:  e [filename]\n",stderr);
+ fputs("\nEditor Command Format:  joe [filename]\n",stderr);
  return 0;
  }
 termtype();
@@ -3716,6 +4326,7 @@ curwin->wind=0;
 curwin->buffer=(struct buffer *)malloc(sizeof(struct buffer));
 curbuf=curwin->buffer;
 curbuf->count=1;
+sigjoe();
 aopen();
 dopen();
 fmopen();
@@ -3725,7 +4336,7 @@ sstring[0]=0;
 rstring[0]=0;
 leave=0;
 
-rmargin=width-2;
+rmargin=width-4;
 tabmagic=0;
 wrap=1;
 autoind=0;
@@ -3743,7 +4354,7 @@ if(argc==2)
  if(handle)
   {
   if(!fminsfil(handle))
-   omsg=(unsigned char *)"\033[7mError reading file\033[m";
+   omsg=(unsigned char *)"\\iError reading file\\i";
   else
    changed=0;
   fclose(handle);
@@ -3756,25 +4367,48 @@ if(argc==2)
    backup=1;
    }
   else
-   omsg=(unsigned char *)"\033[7mError opening file\033[m";
+   omsg=(unsigned char *)"\\iError opening file\\i";
   }
  }
 else omsg=(unsigned char *)"New File";
 edit();
 aclose();
+signorm();
 return 0;
 }
 
 tsignal(sig)
 {
-handle=fopen(ABORT,"w+");
+unsigned char nam[PATHSIZE];
+long tim=time(0);
+struct window *orig=curwin;
+sprintf(nam,"%s%d",ABORT,getpid());
+handle=fopen(nam,"a");
 fmpoint(0);
+fprintf(handle,"\n*** Files in JOE when it aborted on %s",ctime(&tim));
+if(sig) fprintf(handle,"*** JOE was aborted by the signal %d\n",sig);
+else fprintf(handle,"*** JOE was aborted because stdin closed\n");
+if(gfnam[0]) fprintf(handle,"*** FILE: %s\n",gfnam);
+else fprintf(handle,"*** FILE: (Unnamed)\n");
 fmsave(handle,fmsize());
+fflush(handle);
+curbuf->count=0;
+do
+ {
+ stwin(curwin);
+ curwin=curwin->next;
+ ldwin(curwin);
+ if(curbuf->count)
+  {
+  fmpoint(0);
+  if(gfnam[0]) fprintf(handle,"*** FILE: %s\n",gfnam);
+  else fprintf(handle,"*** FILE: (Unnamed)\n");
+  fmsave(handle,fmsize());
+  fflush(handle);
+  curbuf->count=0;
+  }
+ }
+ while(curwin!=orig);
 fclose(handle);
-/*
-aclose();
-printf("\rE aborted by signal %d\r\n",sig);
-printf("Last edit file stored in file called aborted.e\r\n");
-*/
 _exit(1);
 }

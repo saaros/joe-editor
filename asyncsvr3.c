@@ -1,4 +1,4 @@
-/* Terminal interface for HPUX
+/* Terminal interface for ESIX
    Copyright (C) 1991 Joseph H. Allen
 
 This file is part of JOE (Joe's Own Editor)
@@ -109,23 +109,7 @@ aflush()
 {
 if(obufp)
  {
- struct itimerval a,b;
- unsigned long usec=obufp*ccc;
- if(usec>=500000/10 /* HZ */)
-  {
-  a.it_value.tv_sec=usec/1000000;
-  a.it_value.tv_usec=usec%1000000;
-  a.it_interval.tv_usec=0;
-  a.it_interval.tv_sec=0;
-  signal(SIGALRM,dosig);
-  yep=0;
-  sigsetmask(sigmask(SIGALRM));
-  setitimer(ITIMER_REAL,&a,&b);
-  write(fileno(stdout),obuf,obufp);
-  while(!yep) sigpause(0);
-  signal(SIGALRM,SIG_DFL);
-  }
- else write(fileno(stdout),obuf,obufp);
+ write(fileno(stdout),obuf,obufp);
  obufp=0;
  }
 if(!have && !leave)
