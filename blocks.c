@@ -3,18 +3,18 @@
 
 This file is part of JOE (Joe's Own Editor)
 
-JOE is free software; you can redistribute it and/or modify it under the
-terms of the GNU General Public License as published by the Free Software
-Foundation; either version 1, or (at your option) any later version.
+JOE is free software; you can redistribute it and/or modify it under the 
+terms of the GNU General Public License as published by the Free Software 
+Foundation; either version 1, or (at your option) any later version.  
 
-JOE is distributed in the hope that it will be useful, but WITHOUT ANY
-WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
-details.
+JOE is distributed in the hope that it will be useful, but WITHOUT ANY 
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS 
+FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more 
+details.  
 
-You should have received a copy of the GNU General Public License along with
-JOE; see the file COPYING.  If not, write to the Free Software Foundation,
-675 Mass Ave, Cambridge, MA 02139, USA.  */
+You should have received a copy of the GNU General Public License along with 
+JOE; see the file COPYING.  If not, write to the Free Software Foundation, 
+675 Mass Ave, Cambridge, MA 02139, USA.  */ 
 
 /* Take a look at the configuration information in config.h */
 /* This module requires that AUTOINC, ALIGNED, ISIZ, SHFT and BITS be defined
@@ -207,8 +207,8 @@ register int sz;
  while(sz>=16)
   {
 #ifdef AUTOINC
-  *--d= *--s; *--d= *--s; *--d= *--s; *--d= *--s; *--d= *--s; *--d= *--s;
-  *--d= *--s; *--d= *--s; *--d= *--s; *--d= *--s; *--d= *--s; *--d= *--s;
+  *--d= *--s; *--d= *--s; *--d= *--s; *--d= *--s; *--d= *--s; *--d= *--s; 
+  *--d= *--s; *--d= *--s; *--d= *--s; *--d= *--s; *--d= *--s; *--d= *--s; 
   *--d= *--s; *--d= *--s; *--d= *--s; *--d= *--s;
 #else
   d-=16; s-=16;
@@ -330,7 +330,7 @@ register int sz;
 /* Copy the block of 'sz' bytes beginning at 's' to 'd'.  If 'sz' is zero or
  * if 's'=='d', nothing happens.  The bytes at the highest address ('s'+'sz'-1)
  * are copied before the ones at the lowest ('s') are.
- */
+ */ 
 
 char *mbkwd(d,s,sz)
 register char *d, *s;
@@ -462,7 +462,7 @@ register int sz;
 /* Copy the block of 'sz' bytes beginning at 's' to 'd'.  If 'sz' is zero or
  * if 's'=='d', nothing happens.  The bytes at the lowest address ('s')
  * are copied before the ones at the highest ('s'+'sz'-1) are.
- */
+ */ 
 
 char *mfwrd(d,s,sz)
 register char *d, *s;

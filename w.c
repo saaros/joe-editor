@@ -3,18 +3,18 @@
 
 This file is part of JOE (Joe's Own Editor)
 
-JOE is free software; you can redistribute it and/or modify it under the
-terms of the GNU General Public License as published by the Free Software
-Foundation; either version 1, or (at your option) any later version.
+JOE is free software; you can redistribute it and/or modify it under the 
+terms of the GNU General Public License as published by the Free Software 
+Foundation; either version 1, or (at your option) any later version.  
 
-JOE is distributed in the hope that it will be useful, but WITHOUT ANY
-WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
-details.
+JOE is distributed in the hope that it will be useful, but WITHOUT ANY 
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS 
+FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more 
+details.  
 
-You should have received a copy of the GNU General Public License along with
-JOE; see the file COPYING.  If not, write to the Free Software Foundation,
-675 Mass Ave, Cambridge, MA 02139, USA.  */
+You should have received a copy of the GNU General Public License along with 
+JOE; see the file COPYING.  If not, write to the Free Software Foundation, 
+675 Mass Ave, Cambridge, MA 02139, USA.  */ 
 
 #include "config.h"
 #include "b.h"
@@ -272,7 +272,7 @@ SCREEN *t;
   if(req>left)		/* If group is taller than lines left */
    adj=req-left;		/* then family gets shorter */
   else adj=0;
-
+  
   /* Fit a family of windows on the screen */
   do
    {
@@ -329,8 +329,8 @@ SCREEN *t;
     {
     W *l=pw=w;
     while(pw->link.next!=t->topwin &&
-          (pw->link.next->y<0 ||
-          pw->link.next->ny<0 ||
+          (pw->link.next->y<0 || 
+          pw->link.next->ny<0 || 
           pw->link.next->ny<pw->link.next->y))
      {
      pw=pw->link.next;
@@ -698,23 +698,23 @@ char *s;
     case 'u': case 'U':
     atr^=UNDERLINE;
     break;
-
+    
     case 'i': case 'I':
     atr^=INVERSE;
     break;
-
+    
     case 'b': case 'B':
     atr^=BOLD;
     break;
-
+    
     case 'd': case 'D':
     atr^=DIM;
     break;
-
+    
     case 'f': case 'F':
     atr^=BLINK;
     break;
-
+    
     case 0: --s;
     break;
 

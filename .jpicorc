@@ -94,7 +94,7 @@
   %M  Macro recording message
 
  These formatting escape sequences may also be given:
-
+ 
   \i  Inverse
   \u  Underline
   \b  Bold

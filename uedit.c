@@ -3,18 +3,18 @@
 
 This file is part of JOE (Joe's Own Editor)
 
-JOE is free software; you can redistribute it and/or modify it under the
-terms of the GNU General Public License as published by the Free Software
-Foundation; either version 1, or (at your option) any later version.
+JOE is free software; you can redistribute it and/or modify it under the 
+terms of the GNU General Public License as published by the Free Software 
+Foundation; either version 1, or (at your option) any later version.  
 
-JOE is distributed in the hope that it will be useful, but WITHOUT ANY
-WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
-details.
+JOE is distributed in the hope that it will be useful, but WITHOUT ANY 
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS 
+FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more 
+details.  
 
-You should have received a copy of the GNU General Public License along with
-JOE; see the file COPYING.  If not, write to the Free Software Foundation,
-675 Mass Ave, Cambridge, MA 02139, USA.  */
+You should have received a copy of the GNU General Public License along with 
+JOE; see the file COPYING.  If not, write to the Free Software Foundation, 
+675 Mass Ave, Cambridge, MA 02139, USA.  */ 
 
 #include "config.h"
 #include "b.h"
@@ -104,7 +104,7 @@ BW *bw;
  d=' ';
  while(c=prgetc(bw->cursor),
        c!= MAXINT && !crest(c) && (!cwhitel(c) || cwhitel(d)))
-  d=c;
+  d=c; 
  if(c==' ')
   {
   d=prgetc(bw->cursor); if(d!=MAXINT) pgetc(bw->cursor);
@@ -205,7 +205,7 @@ BW *bw;
  int c,		/* Character under cursor */
      f,		/* Character to find */
      dir;	/* 1 to search forward, -1 to search backward */
-
+ 
  switch(c=brc(bw->cursor))
   {
  case '(':  f=')';  dir=1;   break;
@@ -220,7 +220,7 @@ BW *bw;
  case '>':  f='<';  dir= -1; break;
  default:   return -1;
   }
-
+ 
  if(dir==1)
   {
   P *p=pdup(bw->cursor);
@@ -309,25 +309,25 @@ BW *bw;
  int scrollamnt=0;
  int cursoramnt=0;
  int x;
-
+ 
  /* Decide number of lines we're really going to scroll */
-
+ 
  if(bw->top->line>=n) scrollamnt=cursoramnt=n;
  else
   if(bw->top->line) scrollamnt=cursoramnt=bw->top->line;
   else
    if(flg) cursoramnt=bw->cursor->line;
    else if(bw->cursor->line>=n) cursoramnt=n;
-
+ 
  /* Move top-of-window pointer */
  for(x=0;x!=scrollamnt;++x) pprevl(bw->top);
  pbol(bw->top);
-
+ 
  /* Move cursor */
  for(x=0;x!=cursoramnt;++x) pprevl(bw->cursor);
  pbol(bw->cursor);
  pcol(bw->cursor,bw->cursor->xcol);
-
+ 
  /* If window is on the screen, give (buffered) scrolling command */
  if(bw->parent->y!= -1) nscrldn(bw->parent->t->t,bw->y,bw->y+bw->h,scrollamnt);
  }
@@ -346,7 +346,7 @@ BW *bw;
  int scrollamnt=0;
  int cursoramnt=0;
  int x;
-
+ 
  /* How much we're really going to scroll... */
  if(bw->top->b->eof->line<bw->top->line+bw->h)
   {
@@ -360,11 +360,11 @@ BW *bw;
 
  /* Move top-of-window pointer */
  for(x=0;x!=scrollamnt;++x) pnextl(bw->top);
-
+ 
  /* Move cursor */
  for(x=0;x!=cursoramnt;++x) pnextl(bw->cursor);
  pcol(bw->cursor,bw->cursor->xcol);
-
+ 
  /* If window is on screen, give (buffered) scrolling command to terminal */
  if(bw->parent->y!= -1) nscrlup(bw->parent->t->t,bw->y,bw->y+bw->h,scrollamnt);
  }

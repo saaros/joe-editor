@@ -73,7 +73,7 @@
   %M  Macro recording message
 
  The formatting escape sequences may also be given:
-
+ 
   \i  Inverse
   \u  Underline
   \b  Bold
@@ -158,7 +158,7 @@
 \i \i^R  backward     ^[G to line No. ^[ DEL word<  replace ^XX swap   ^X^B switch\i \i
 }
 
-{Editing
+{Editing 
 \i   Help Screen    turn off with ^XH   prev. screen ^X,  next screen ^X.        \i
 \i \i\uCASE\u           \uTRANSPOSE\u  \uINSERT\u    \uMACROS\u            \uPROGRAMS\u               \i \i
 \i \i^[U  Up word   ^T   Chars ^O  line  ^X( record        ^X^I Indent region     \i \i
@@ -376,6 +376,8 @@ bknd		^X '		Shell window (joe)
 bof		^[ <		Goto beginning of file
 bol		.kh		Goto beginning of line
 bol		^A
+bol		^[ [ H
+bol		^[ [ 1 ~
 bop		^[ p		(uemacs)
 bufed		^X b
 bknd		^[ '		Shell window
@@ -394,6 +396,8 @@ edit		^X ^F		Edit a file: creates orphaned buffers
 eof		^[ >		Go to end of file
 eol		.kH		Go to end of line
 eol		^E
+eol		^[ [ F
+eol		^[ [ 4 ~
 eop		^[ n		(uemacs)
 execmd		^[ x
 insc		^C		(uemacs)

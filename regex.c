@@ -3,19 +3,20 @@
 
 This file is part of JOE (Joe's Own Editor)
 
-JOE is free software; you can redistribute it and/or modify it under the
-terms of the GNU General Public License as published by the Free Software
-Foundation; either version 1, or (at your option) any later version.
+JOE is free software; you can redistribute it and/or modify it under the 
+terms of the GNU General Public License as published by the Free Software 
+Foundation; either version 1, or (at your option) any later version.  
 
-JOE is distributed in the hope that it will be useful, but WITHOUT ANY
-WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
-details.
+JOE is distributed in the hope that it will be useful, but WITHOUT ANY 
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS 
+FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more 
+details.  
 
-You should have received a copy of the GNU General Public License along with
-JOE; see the file COPYING.  If not, write to the Free Software Foundation,
-675 Mass Ave, Cambridge, MA 02139, USA.  */
+You should have received a copy of the GNU General Public License along with 
+JOE; see the file COPYING.  If not, write to the Free Software Foundation, 
+675 Mass Ave, Cambridge, MA 02139, USA.  */ 
 
+#include <ctype.h>
 #include "config.h"
 #include "zstr.h"
 #include "vs.h"
@@ -34,7 +35,7 @@ int *b;
   ++s; --l;
   switch(*s)
    {
-  case 'n': c= 10; break;
+  case 'n': c= 10; break; 
   case 't': c= 9; break;
   case 'a': c= 7; break;
   case 'b': c= 8; break;
@@ -214,7 +215,7 @@ while(len--)
     }
     while(c!=MAXINT && c!='\n');
    goto fail;
-
+	
   case 'c':
    o=pdup(p);
    do
@@ -274,7 +275,7 @@ while(len--)
           (*oregex=='\\' ?
            (tregex=oregex+2, tlen=olen-2, brack(&tregex,&tlen,c))
           :
-           (icase?toup(c)==toup(*oregex):c==*oregex)
+           (icase?toupper(c)==toupper(*oregex):c==*oregex)
           )
         );
 
@@ -295,16 +296,16 @@ while(len--)
   case '<':
    if(!pisbow(p)) goto fail;
    break;
-
+  
   case '>':
    if(!piseow(p)) goto fail;
    break;
-
+  
   default:
    d=pgetc(p);
    if(icase)
     {
-    if(toup(d)!=toup(c)) goto fail;
+    if(toupper(d)!=toupper(c)) goto fail;
     }
    else
     {
@@ -317,7 +318,7 @@ while(len--)
   d=pgetc(p);
   if(icase)
    {
-   if(toup(d)!=toup(c)) goto fail;
+   if(toupper(d)!=toupper(c)) goto fail;
    }
   else
    {

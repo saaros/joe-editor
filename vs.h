@@ -3,18 +3,18 @@
 
 This file is part of JOE (Joe's Own Editor)
 
-JOE is free software; you can redistribute it and/or modify it under the
-terms of the GNU General Public License as published by the Free Software
-Foundation; either version 1, or (at your option) any later version.
+JOE is free software; you can redistribute it and/or modify it under the 
+terms of the GNU General Public License as published by the Free Software 
+Foundation; either version 1, or (at your option) any later version.  
 
-JOE is distributed in the hope that it will be useful, but WITHOUT ANY
-WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
-details.
+JOE is distributed in the hope that it will be useful, but WITHOUT ANY 
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS 
+FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more 
+details.  
 
-You should have received a copy of the GNU General Public License along with
-JOE; see the file COPYING.  If not, write to the Free Software Foundation,
-675 Mass Ave, Cambridge, MA 02139, USA.  */
+You should have received a copy of the GNU General Public License along with 
+JOE; see the file COPYING.  If not, write to the Free Software Foundation, 
+675 Mass Ave, Cambridge, MA 02139, USA.  */ 
 
 #ifndef _Ivs
 #define _Ivs
@@ -111,7 +111,7 @@ JOE; see the file COPYING.  If not, write to the Free Software Foundation,
  */
 
 /* Functions and global variable you have to define.  Replace these with
- * macros or defines here if they are not to be actual functions
+ * macros or defines here if they are not to be actual functions 
  */
 
 /* An element with name 'a' */
@@ -250,7 +250,7 @@ sELEMENT(*vsndup());
  * functions and the macros of the next section.  You'll probably want to make
  * functionalized instances of the ones you use most often - especially since
  * the macros aren't safe).
- */
+ */ 
 sELEMENT(*vsdup());
 
 /* sELEMENT(*vsset(sELEMENT(*vary),int pos,sELEMENT(element)));
@@ -270,7 +270,7 @@ sELEMENT(*_vsset());
   : \
    ((v)[p]=(el), (v)) \
   ) \
- )
+ )   
 
 /* sELEMENT(*vsadd(sELEMENT(*vary),sELEMENT(element)));
  * Concatenate a single element to the end of 'vary'.  A new array is created
@@ -430,7 +430,7 @@ int vsspan();
 /***************/
 #ifdef junk
 /* char *vsread(char *d,int p,int (*getC)(void *ptr),void *ptr);
- * Replace 'd' with next line read from read-character function 'getC'.  If
+ * Replace 'd' with next line read from read-character function 'getC'.  If 
  * 'd' is 0, a new string is allocated.  If there is no more input, the string
  * is freed and 0 is returned.  The \n is deleted from the entered line.
  *

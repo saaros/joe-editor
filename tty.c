@@ -3,18 +3,18 @@
 
 This file is part of JOE (Joe's Own Editor)
 
-JOE is free software; you can redistribute it and/or modify it under the
-terms of the GNU General Public License as published by the Free Software
-Foundation; either version 1, or (at your option) any later version.
+JOE is free software; you can redistribute it and/or modify it under the 
+terms of the GNU General Public License as published by the Free Software 
+Foundation; either version 1, or (at your option) any later version.  
 
-JOE is distributed in the hope that it will be useful, but WITHOUT ANY
-WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
-details.
+JOE is distributed in the hope that it will be useful, but WITHOUT ANY 
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS 
+FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more 
+details.  
 
-You should have received a copy of the GNU General Public License along with
-JOE; see the file COPYING.  If not, write to the Free Software Foundation,
-675 Mass Ave, Cambridge, MA 02139, USA.  */
+You should have received a copy of the GNU General Public License along with 
+JOE; see the file COPYING.  If not, write to the Free Software Foundation, 
+675 Mass Ave, Cambridge, MA 02139, USA.  */ 
 
 /** System include files **/
 
@@ -336,7 +336,7 @@ void tickon()
 void ttopnn()
  {
  int x, bbaud;
-
+ 
 #ifdef TTYPOSIX
  struct termios newterm;
 #else
@@ -348,10 +348,10 @@ void ttopnn()
  struct ltchars ltarg;
 #endif
 #endif
-
+ 
  if(!termin)
   if(idleout ? (!(termin=stdin) || !(termout=stdout)) :
-               (!(termin=fopen("/dev/tty","r")) ||
+               (!(termin=fopen("/dev/tty","r")) || 
                !(termout=fopen("/dev/tty","w"))))
    {
    fprintf(stderr,"Couldn\'t open /dev/tty\n");
@@ -364,11 +364,11 @@ void ttopnn()
 #endif
    tickon();
    }
-
+ 
  if(ttymode) return;
  ttymode=1;
  fflush(termout);
-
+ 
 #ifdef TTYPOSIX
  tcgetattr(fileno(termin),&oldterm);
  newterm=oldterm;
@@ -415,7 +415,7 @@ void ttopnn()
  bbaud=arg.sg_ospeed;
 #endif
 #endif
-
+ 
  baud=9600; upc=0;
  for(x=0;x!=30;x+=2)
   if(bbaud==speeds[x])
@@ -441,14 +441,14 @@ void ttopnn()
 void ttclsn()
  {
  int oleave;
-
+ 
  if(ttymode) ttymode=0;
  else return;
-
+ 
  oleave=leave; leave=1;
-
+ 
  ttflsh();
-
+ 
 #ifdef TTYPOSIX
  tcsetattr(fileno(termin),TCSADRAIN,&oldterm);
 #else
@@ -460,14 +460,14 @@ void ttclsn()
  ioctl(fileno(termin),TIOCSLTC,&oltarg);
 #endif
 #endif
-
+ 
  leave=oleave;
  }
 
 /* Timer interrupt handler */
 
 static int yep;
-static void dosig() { yep=1; }
+static void dosig() { yep=1; } 
 
 /* FLush output and check for typeahead */
 
@@ -523,9 +523,9 @@ int ttflsh()
    tickon();
    }
   else jwrite(fileno(termout),obuf,obufp);
-
+ 
 #else
-
+ 
   jwrite(fileno(termout),obuf,obufp);
 
 #ifdef FIORDCHK
@@ -533,10 +533,10 @@ int ttflsh()
 #endif
 
 #endif
-
+ 
   obufp=0;
   }
-
+ 
  /* Ack previous packet */
  if(ackkbd!= -1 && accept!=MAXINT && !have)
   {
@@ -545,9 +545,9 @@ int ttflsh()
   else jwrite(ackkbd,&c,1);
   accept=MAXINT;
   }
-
+ 
  /* Check for typeahead or next packet */
-
+ 
  if(!have && !leave)
   if(ackkbd!= -1)
    {
@@ -564,10 +564,10 @@ int ttflsh()
    {
    /* Set terminal input to non-blocking */
    fcntl(fileno(termin),F_SETFL,O_NDELAY);
-
+  
    /* Try to read */
    if(read(fileno(termin),&havec,1)==1) have=1;
-
+  
    /* Set terminal back to blocking */
    fcntl(fileno(termin),F_SETFL,0);
    }
@@ -648,9 +648,9 @@ int *x, *y;
  struct winsize getit;
 #endif
 #endif
-
+ 
  *x=0; *y=0;
-
+ 
 #ifdef TIOCGSIZE
  if(ioctl(fileno(termout),TIOCGSIZE,&getit)!= -1)
   {
@@ -908,7 +908,7 @@ void *dieobj;
  MPX *m;
  char *name;
  if(!(name=getpty(ptyfd))) return 0;
- for(x=0;x!=NPROC;++x)
+ for(x=0;x!=NPROC;++x) 
   if(!asyncs[x].func) { m=asyncs+x; goto ok; }
  return 0;
  ok:
@@ -941,17 +941,17 @@ void *dieobj;
    {
    signrm();
    close(*ptyfd);
-
+  
 #ifdef TIOCNOTTY
    x=open("/dev/tty",O_RDWR);
    ioctl(x,TIOCNOTTY,0);
 #endif
-
+  
    setpgrp(0,0);
-
+  
    for(x=0;x!=32;++x) close(x); /* Yes, this is quite a kludge... all in the
                                    name of portability */
-
+  
    if((x=open(name,O_RDWR))!= -1)    /* Standard input */
     {
     char **env=newenv(mainenv,"TERM=");
@@ -962,7 +962,7 @@ void *dieobj;
     dup(x); dup(x);		/* Standard output, standard error */
     /* (yes, stdin, stdout, and stderr must all be open for reading and
      * writing.  On some systems the shell assumes this */
-
+  
     /* We could probably have a special TTY set-up for JOE, but for now
      * we'll just use the TTY setup for the TTY was was run on */
 #ifdef TTYPOSIX
@@ -976,7 +976,7 @@ void *dieobj;
     ioctl(0,TIOCSLTC,&oltarg);
 #endif
 #endif
-
+  
     /* Execute the shell */
     execve(cmd,args,env);
     }

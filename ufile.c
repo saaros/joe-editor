@@ -3,18 +3,18 @@
 
 This file is part of JOE (Joe's Own Editor)
 
-JOE is free software; you can redistribute it and/or modify it under the
-terms of the GNU General Public License as published by the Free Software
-Foundation; either version 1, or (at your option) any later version.
+JOE is free software; you can redistribute it and/or modify it under the 
+terms of the GNU General Public License as published by the Free Software 
+Foundation; either version 1, or (at your option) any later version.  
 
-JOE is distributed in the hope that it will be useful, but WITHOUT ANY
-WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
-details.
+JOE is distributed in the hope that it will be useful, but WITHOUT ANY 
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS 
+FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more 
+details.  
 
-You should have received a copy of the GNU General Public License along with
-JOE; see the file COPYING.  If not, write to the Free Software Foundation,
-675 Mass Ave, Cambridge, MA 02139, USA.  */
+You should have received a copy of the GNU General Public License along with 
+JOE; see the file COPYING.  If not, write to the Free Software Foundation, 
+675 Mass Ave, Cambridge, MA 02139, USA.  */ 
 
 #include <stdio.h>
 #include <fcntl.h>
@@ -194,7 +194,7 @@ BW *bw;
    sprintf(name,"%s/%s",backpath,namepart(tmp,bw->b->name));
   else
    sprintf(name,"%s",bw->b->name);
-
+  
   ossep(name);
 
   for(x=zlen(name);name[--x]!='.';)
@@ -566,7 +566,7 @@ char *s;
 void *object;
 int *notify;
  {
- bw->b->name=joesep(zdup(s));
+ bw->b->name=joesep(zdup(s)); 
  return dosave(bw,s,exdone,notify);
  }
 
@@ -577,7 +577,7 @@ BW *bw;
  else if(bw->b->name && !exask)
   {
   return dosave(bw,vsncpy(NULL,0,sz(bw->b->name)),exdone1,NULL);
-  }
+  } 
  else
   {
   BW *pbw=wmkpw(bw,

@@ -1,5 +1,3 @@
-This is the last version of JOE I wrote before my 9 year hiatus beginning in
-1995.
 
 This is Joe's Own Editor.  See the INFO file if you don't know what this is.
 
@@ -46,8 +44,8 @@ Installation proceedure
 
 USEAGE:	joe filenames
 
-	Optionally preceed each filename with +nnn to start at specified
-line number.
+	Optionally preceed each filename with +nnn to start at specified 
+line number.  
 
   Options:
 
@@ -104,9 +102,9 @@ environment variable.
 
 ** IMPORTANT **
 
-The baud rate must be correctly set or either typeahead will not interrupt
-the screen update and scrolling wont be used or there will be annoying
-delays in the screen update.  If you can't set the baud rate correctly with
+The baud rate must be correctly set or either typeahead will not interrupt 
+the screen update and scrolling wont be used or there will be annoying 
+delays in the screen update.  If you can't set the baud rate correctly with 
 'stty', give a numeric value in the environment variable 'BAUD' or to the
 command line options '-baud'.
 
@@ -121,17 +119,17 @@ Use the LINES and COLUMNS environment variables or the -lines and -columns
 command line options if you need the terminal size to be different than
 whatever the termcap entry or stty reports.
 
-Since most people use terminal emulators, JOE does not send out pad
-characters.  If you're using a real terminal and the padding matters, set
+Since most people use terminal emulators, JOE does not send out pad 
+characters.  If you're using a real terminal and the padding matters, set 
 the environment variable DOPADDING or give the command line option
 -dopadding.
 
 If you want joe to try to disable ^S/^Q processing, set the environment
 variable NOXON or command line option -noxon.
 
-A termcap file is included with JOE.  You might consider updating your own
-termcap file with the entries in it, particularly if you use ANSI/VT100ish
-terminals.  JOE understands some capabilities which are not usually supplied
+A termcap file is included with JOE.  You might consider updating your own 
+termcap file with the entries in it, particularly if you use ANSI/VT100ish 
+terminals.  JOE understands some capabilities which are not usually supplied 
 in normal termcap (see below).
 
                                  VARIATIONS
@@ -151,7 +149,7 @@ attempts to find this file in:
 wherever the system-wide joerc file is going to go) when 'make install' is
 run.
 
-	Termcap is better than terminfo because it is a more open standard.
+	Termcap is better than terminfo because it is a more open standard. 
 Programs can directly access the termcap database and future versions of
 terminfo may require programs to use curses.  The only argument in
 terminfo's favour is that it is faster than termcap.  To fix this problem,

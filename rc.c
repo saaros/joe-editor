@@ -78,7 +78,7 @@ char *name;
  *n=fdefault;
  }
 
-/* Set a global or local option
+/* Set a global or local option 
  * returns 0 for no such option,
  *         1 for option accepted
  *         2 for option + argument accepted
@@ -207,7 +207,7 @@ struct glopts
    "Exit ask "},
 
   {"beep", 0, &beep, 0,
-   "Warning bell enabled",
+   "Warning bell enabled", 
    "Warning bell disabled",
    "Beeps " },
 
@@ -260,13 +260,13 @@ struct glopts
    0, 0, 0, 0, 2, 1024 },
 
   {"baud", 1, &Baud, 0,
-   0, 0, 0, 0, 50, 32767 },
+   0, 0, 0, 0, 50, 32767 }, 
 
   {"columns", 1, &columns, 0,
    0, 0, 0, 0, 2, 1024 },
 
   {"skiptop", 1, &skiptop, 0,
-   0, 0, 0, 0, 0, 64 },
+   0, 0, 0, 0, 0, 64 }, 
 
   { 0, 0, 0 }
  };
@@ -302,7 +302,7 @@ OPTIONS *options;
     {
     case 0: if(set) *glopts[x].set=st;
     break;
-
+    
     case 1: if(set && arg)
              {
              sscanf(arg,"%d",&val);
@@ -318,7 +318,7 @@ OPTIONS *options;
     case 4: if(options) *(int *)((char *)options+glopts[x].ofst)=st;
             else if(set==2) *(int *)((char *)&fdefault+glopts[x].ofst)=st;
     break;
-
+    
     case 5: if(arg)
              if(options)
               {
@@ -527,7 +527,7 @@ void *object;
   case 5:
   sprintf(buf,glopts[x].yes,*(int *)((char *)&bw->o+glopts[x].ofst));
   goto in;
-
+  
   case 7:
   sprintf(buf,glopts[x].yes,*(int *)((char *)&bw->o+glopts[x].ofst)+1);
   in: xx=(int *)malloc(sizeof(int)); *xx=x;
@@ -569,7 +569,7 @@ BW *bw;
    {
    case 0: sprintf(s[x],"%s%s",glopts[x].menu,*glopts[x].set?"ON":"OFF");
    break;
-
+   
    case 1: sprintf(s[x],"%s%d",glopts[x].menu,*glopts[x].set);
    break;
 
@@ -578,7 +578,7 @@ BW *bw;
 
    case 4: sprintf(s[x],"%s%s",glopts[x].menu,*(int *)((char *)&bw->o+glopts[x].ofst)?"ON":"OFF");
    break;
-
+   
    case 5: sprintf(s[x],"%s%d",glopts[x].menu,*(int *)((char *)&bw->o+glopts[x].ofst));
    break;
 
@@ -616,11 +616,11 @@ char *name;
 #else
  fd=fopen(buf,"r");
 #endif
-
+ 
  if(!fd) return -1;		/* Return if we couldn't open the rc file */
-
+ 
  fprintf(stderr,"Processing '%s'...",name); fflush(stderr);
-
+ 
  while(++line, fgets(buf,1024,fd))
   switch(buf[0])
    {
@@ -639,7 +639,7 @@ char *name;
     o->name=zdup(buf);
     }
    break;
-
+   
    case '-':	/* Set an option */
     {
     unsigned char *opt=buf+1;
@@ -659,7 +659,7 @@ char *name;
      }
     }
    break;
-
+   
    case '{':	/* Enter help text */
     {
     int bfl;
@@ -825,7 +825,7 @@ char *name;
     if(!m) break;
 
     /* Skip to end of key sequence */
-    for(y=x;buf[y]!=0 && buf[y]!='\t' && buf[y]!='\n' &&
+    for(y=x;buf[y]!=0 && buf[y]!='\t' && buf[y]!='\n' && 
             (buf[y]!=' ' || buf[y+1]!=' ');++y);
     buf[y]=0;
 

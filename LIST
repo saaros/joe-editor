@@ -112,7 +112,7 @@ hprev		Switch to previous help screen
 Inserting
 ---------
 ctrl		Type next key
-insc		Insert a space
+insc		Insert a space 
 open		Insert newline
 quote		Insert a control character
 quote8		Insert a meta character

@@ -3,18 +3,18 @@
 
 This file is part of JOE (Joe's Own Editor)
 
-JOE is free software; you can redistribute it and/or modify it under the
-terms of the GNU General Public License as published by the Free Software
-Foundation; either version 1, or (at your option) any later version.
+JOE is free software; you can redistribute it and/or modify it under the 
+terms of the GNU General Public License as published by the Free Software 
+Foundation; either version 1, or (at your option) any later version.  
 
-JOE is distributed in the hope that it will be useful, but WITHOUT ANY
-WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
-details.
+JOE is distributed in the hope that it will be useful, but WITHOUT ANY 
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS 
+FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more 
+details.  
 
-You should have received a copy of the GNU General Public License along with
-JOE; see the file COPYING.  If not, write to the Free Software Foundation,
-675 Mass Ave, Cambridge, MA 02139, USA.  */
+You should have received a copy of the GNU General Public License along with 
+JOE; see the file COPYING.  If not, write to the Free Software Foundation, 
+675 Mass Ave, Cambridge, MA 02139, USA.  */ 
 
 #include "config.h"
 #include "b.h"
@@ -31,25 +31,25 @@ BW *bw;
  P *p=bw->cursor, *q;
  long endcol, begcol, x;
  int c;
-
+ 
  peol(p);
  while(cwhite(c=prgetc(p)));
  if(c=='\n') { pgetc(p); goto done; }
  if(c==MAXINT) goto done;
  pgetc(p); endcol=piscol(p);
-
+ 
  pbol(p);
  while(cwhite(c=pgetc(p)));
  if(c=='\n') { prgetc(p); goto done; }
  if(c==MAXINT) goto done;
  prgetc(p); begcol=piscol(p);
-
+ 
  if(endcol-begcol>bw->o.rmargin+bw->o.lmargin) goto done;
-
+ 
  q=pdup(p); pbol(q); bdel(q,p); prm(q);
-
+ 
  for(x=0;x!=(bw->o.lmargin+bw->o.rmargin)/2-(endcol-begcol)/2;++x) binsc(p,' ');
-
+ 
  done:
  if(!pnextl(p))
   {
@@ -330,23 +330,23 @@ BW *bw;
  int c;
  P *p, *q;
  p=pdup(bw->cursor); pbol(p);
-
+ 
  /* Do nothing if we're not on a paragraph line */
  if(pisnpara(p))
   {
   prm(p);
   return 0;
   }
-
+ 
  /* Move p to beginning of paragraph, bw->cursor to end of paragraph and
   * set curoff to original cursor offset within the paragraph */
  pbop(p);
  curoff=bw->cursor->byte-p->byte;
  pset(bw->cursor,p); peop(bw->cursor);
-
+ 
  /* Insure that paragraph ends on a beginning of a line */
  if(!pisbol(bw->cursor)) binsc(bw->cursor,'\n'), pgetc(bw->cursor);
-
+ 
  /* Record indentation of second line of paragraph, of first line if there
   * is only one line */
  q=pdup(p); pnextl(q);
@@ -370,17 +370,17 @@ BW *bw;
 
  /* But if the left margin is greater, we use that instead */
  if(bw->o.lmargin>indent) indent=bw->o.lmargin;
-
+ 
  /* Cut paragraph into memory buffer */
  buf=(char *)malloc(len=(bw->cursor->byte-p->byte));
  brmem(p,buf,len);
  bdel(p,bw->cursor);
-
+ 
  /* text is in buffer.  insert it at cursor */
-
+ 
  /* Do first line */
  b=buf;
-
+ 
  while(len--)
   {
   /* Set cursor position if we're at original offset */
@@ -419,9 +419,9 @@ BW *bw;
    break;
    }
   }
-
+ 
  /* Do rest */
-
+ 
  while(len>0)
   if(cwhitel(*b) || *b=='\r')
    {
@@ -470,7 +470,7 @@ BW *bw;
    binsc(p,*b++); --len; pgetc(p);
    if(piscol(p)>bw->o.rmargin) wrapword(p,indent,bw->o.french,indents);
    }
-
+ 
  binsc(p,'\n');
  prm(p);
  free(buf);

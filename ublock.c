@@ -3,18 +3,18 @@
 
 This file is part of JOE (Joe's Own Editor)
 
-JOE is free software; you can redistribute it and/or modify it under the
-terms of the GNU General Public License as published by the Free Software
-Foundation; either version 1, or (at your option) any later version.
+JOE is free software; you can redistribute it and/or modify it under the 
+terms of the GNU General Public License as published by the Free Software 
+Foundation; either version 1, or (at your option) any later version.  
 
-JOE is distributed in the hope that it will be useful, but WITHOUT ANY
-WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
-details.
+JOE is distributed in the hope that it will be useful, but WITHOUT ANY 
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS 
+FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more 
+details.  
 
-You should have received a copy of the GNU General Public License along with
-JOE; see the file COPYING.  If not, write to the Free Software Foundation,
-675 Mass Ave, Cambridge, MA 02139, USA.  */
+You should have received a copy of the GNU General Public License along with 
+JOE; see the file COPYING.  If not, write to the Free Software Foundation, 
+675 Mass Ave, Cambridge, MA 02139, USA.  */ 
 
 #include "config.h"
 #include "b.h"
@@ -51,7 +51,7 @@ struct marksav
 MARKSAV markfree={{&markfree,&markfree}};
 int nstack=0;
 
-int upsh(bw)
+int upsh(bw) 
 BW *bw;
  {
  MARKSAV *m=alitem(&markfree,sizeof(MARKSAV));
@@ -123,7 +123,7 @@ long height,right;
   {
   pcol(p,org->xcol);
   pset(q,p);
-  pcolwse(q,right);
+  pcolwse(q,right); 
   peof(z); binsb(z,bcpy(p,q));
   peof(z); binsc(z,'\n');
   pnextl(p);
@@ -528,11 +528,11 @@ BW *bw;
  P *p, *q;
  long indent;
  if(pisblank(bw->cursor)) return;
-
+ 
  p=pdup(bw->cursor);
  q=pdup(p);
  indent=pisindent(p);
-
+ 
  do
   if(!pprevl(p)) goto done;
   else pbol(p);
@@ -543,15 +543,15 @@ BW *bw;
  p->xcol=piscol(p);
  if(markb) prm(markb);
  markb=p; p->owner= &markb;
-
+ 
  do
   if(!pnextl(q)) break;
   while(pisindent(q)>=indent && !pisblank(q));
-
+ 
  if(markk) prm(markk);
  q->xcol=piscol(q);
  markk=q; q->owner= &markk;
-
+ 
  updall();
  }
 
@@ -691,7 +691,7 @@ int *notify;
    long width=markk->xcol-markb->xcol;
    long height;
    int usetabs=ptabrect(markb,markk->line-markb->line+1,markk->xcol);
-   tmp=bload(s);
+   tmp=bload(s); 
    if(error)
     {
     msgnw(bw,msgs[error+5]);
@@ -743,7 +743,7 @@ int *notify;
  {
  int fr[2];
  int fw[2];
- if(notify) *notify=1;
+ if(notify) *notify=1; 
  if(markb && markk && !square &&
     markb->b==bw->b && markk->b==bw->b && markb->byte==markk->byte) goto ok;
  if(!markv(1))
@@ -752,7 +752,7 @@ int *notify;
   return -1;
   }
  ok:
-
+ 
  pipe(fr);
  pipe(fw);
  npartial(bw->parent->t->t);

@@ -13,7 +13,7 @@ If you have questions, problems or suggestions,
 send email to: 'jhallen@world.std.com'
 
 
-	JOE is the professional freeware ASCII text screen editor for UNIX.
+	JOE is the professional freeware ASCII text screen editor for UNIX. 
 It makes full use of the power and versatility of UNIX, but lacks the steep
 learning curve and basic nonsense you have to deal with in every other UNIX
 editor. JOE has the feel of most IBM PC text editors: The key-sequences are
@@ -51,7 +51,7 @@ lines. Control characters and characters above 127 can be displayed and
 entered- even ^Q and ^S.  The cursor's row and column number can be
 displayed in the status line.
 
-	The key layout is made to reduce terminal incompatibility nonsense.
+	The key layout is made to reduce terminal incompatibility nonsense. 
 ^Q and ^S are not used and both ^H and DEL are mapped to backspace.  Case
 does not matter in key sequences- ^K E, ^K e, and ^K ^E are each mapped to
 the same function.  The arrow keys and PageUp, PageDown, Home, End, Insert
@@ -59,7 +59,7 @@ and Delete keypad keys are read from the termcap entry and are assigned to
 the proper functions.  A simple initialization file, similar to Semware's
 Q-EDIT, allows key-bindings, simple macros and help windows to be defined.
 
-	JOE has full termcap/terminfo support and will work on any terminal.
+	JOE has full termcap/terminfo support and will work on any terminal. 
 JOE has the best screen update optimization algorithm available.  It uses
 VT100-style scrolling regions the way they are supposed to be used (I.E.,
 without building insert and delete line functions out of them) and has a
@@ -70,7 +70,7 @@ deferral is not bypassed by tty buffering.
 
 	JOE has multiple windows and lacks the confusing notion of a named
 buffers.  You just have files and windows.  When there are more windows than
-can fit on the screen, the Goto-Next-Window function scrolls through them.
+can fit on the screen, the Goto-Next-Window function scrolls through them. 
 The same file can have multiple windows opened on it.
 
 	JOE has VI-style unix integration.  You can filter a highlighted
@@ -122,7 +122,7 @@ SEARCH           ^KU top of file  ^KW file   ^J >line SPELL        ^KE new
 	JOE has a powerful set of editing commands suitable for editing both
 text files and programs:
 
-		- search and replace system, including powerful regular
+		- search and replace system, including powerful regular 
 		  expressions (including matching of balanced C expressions).
 
 		- tags file search

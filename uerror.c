@@ -2,7 +2,7 @@
 
 #include "queue.h"
 #include "b.h"
-#include "vs.h"
+#include "vs.h" 
 #include "ufile.h"
 #include "w.h"
 #include "bw.h"
@@ -116,15 +116,15 @@ long row;
  /* Skip to end of first word */
  for(y=x;crest(s[y]) || s[y]=='.' || s[y]=='/';++y);
 
- /* Save file name */
+ /* Save file name */ 
  if(x!=y) name=vsncpy(NULL,0,s+x,y-x);
-
+ 
  /* Skip to first number */
  for(x=y;s[x] && (s[x]<'0' || s[x]>'9');++x);
 
  /* Skip to end of first number */
  for(y=x;s[y]>='0' && s[y]<='9';++y);
-
+ 
  /* Save line number */
  if(x!=y) sscanf(s+x,"%ld",&line);
  if(line!= -1) --line;

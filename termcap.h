@@ -3,18 +3,18 @@
 
 This file is part of JOE (Joe's Own Editor)
 
-JOE is free software; you can redistribute it and/or modify it under the
-terms of the GNU General Public License as published by the Free Software
-Foundation; either version 1, or (at your option) any later version.
+JOE is free software; you can redistribute it and/or modify it under the 
+terms of the GNU General Public License as published by the Free Software 
+Foundation; either version 1, or (at your option) any later version.  
 
-JOE is distributed in the hope that it will be useful, but WITHOUT ANY
-WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
-details.
+JOE is distributed in the hope that it will be useful, but WITHOUT ANY 
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS 
+FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more 
+details.  
 
-You should have received a copy of the GNU General Public License along with
-JOE; see the file COPYING.  If not, write to the Free Software Foundation,
-675 Mass Ave, Cambridge, MA 02139, USA.  */
+You should have received a copy of the GNU General Public License along with 
+JOE; see the file COPYING.  If not, write to the Free Software Foundation, 
+675 Mass Ave, Cambridge, MA 02139, USA.  */ 
 
 #ifndef _Itermcap
 #define _Itermcap 1
@@ -38,7 +38,7 @@ struct cap
 
  char *abuf;			/* For terminfo compatible version */
  char *abufp;
-
+ 
  int div;			/* tenths of MS per char */
  int baud;			/* Baud rate */
  char *pad;			/* Padding string or NULL to use NUL */
@@ -90,7 +90,7 @@ CAP *getcap();
 /* CAP *setcap(CAP *cap,int baud,void (*out)(void *outptr,char c),void *outptr);
  *
  * Reset baud, out and outptr for a CAP
- */
+ */ 
 CAP *setcap();
 
 /* char *jgetstr(CAP *cap,char *name);
@@ -128,9 +128,9 @@ void rmcap();
 
    'cap' is the CAP returned by getcap which contains the baud rate and output
    function.
-
+   
    'str' is the string to execute.  If 'str'==NULL, nothing happens.
-
+   
    'l' is the number of lines effected by this string.  For example, if you
    use the clear to end of screen capability, the number of lines between
    the current cursor position and the end of the screen should be
@@ -146,9 +146,9 @@ void texec();
 
    'cap' is the CAP returned by getcap which contains the baud rate and output
    functions.
-
+   
    'str' is the string to execute.  If 'str'==NULL, tcost return 10000.
-
+   
    'l' is the number of lines effected by this string.  Ex: if you
    use the clear to end of screen capability, the number of lines between
    the current cursor position and the end of the screen should be

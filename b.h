@@ -26,19 +26,19 @@ struct header
 struct point
  {
  LINK(P) link;
-
+ 
  B *b;
  int ofst;
  char *ptr;
  H *hdr;
-
+ 
  long byte;
  long line;
  long col;
  long xcol;
  int valcol;
  int end;
-
+ 
  P **owner;
  };
 

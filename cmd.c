@@ -338,7 +338,7 @@ int cmdcmplt(bw)
 BW *bw;
  {
  MENU *m;
- P *p, *q;
+ P *p, *q; 
  char *line;
  char *line1;
  char **lst;
