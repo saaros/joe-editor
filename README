@@ -1,12 +1,3 @@
-Here is the rewrite of JOE.  It now uses the linked-list of gap buffers.  I
-went nuts writing libraries, so for example this one has its own version
-malloc!
-
-
-
---> Original README
-
-
 This is Joe's Own Editor.  See the INFO file if you don't know what this is.
 
 Installation proceedure

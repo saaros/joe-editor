@@ -156,13 +156,10 @@ char *mktmp(where)
 char *where;
 {
 static int seq=0;
-char buf[1024];
 char *name=0;
 int fd;
 loop:
-/* name=vsfmt(name,"%sJ%d%d.tmp",where,seq++%1000,(int)time(NULL)%1000); */
-sprintf(buf,"%sJ%d%d.tmp",where,seq++%1000,(int)time(NULL)%1000);
-name = vsncpy(NULL,0,sz(buf));
+name=vsfmt(name,"%sJ%d%d.tmp",where,seq++%1000,(int)time(NULL)%1000);
 if((fd=open(name,0))!= -1)
  {
  close(fd);

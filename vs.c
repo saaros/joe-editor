@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License along with
 JOE; see the file COPYING.  If not, write to the Free Software Foundation,
 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
-/* #include <varargs.h> */
+#include <varargs.h>
 #include "config.h"
 #include "heap.h"
 #include "zstr.h"
@@ -448,7 +448,6 @@ while(x) ts[y++]=ary[--x];
 return y;
 }
 
-#ifdef junk
 /* Variable length string printf */
 
 char *vsfmt(va_alist)
@@ -639,5 +638,3 @@ sLen(s)=n;
 s[n]=0;
 return s;
 }
-
-#endif
