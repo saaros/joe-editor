@@ -704,7 +704,7 @@ int k;
     binsc(bw->cursor,' '), pgetc(bw->cursor);
   binsc(bw->cursor,k), pgetc(bw->cursor);
   if(bw->o.wordwrap && piscol(bw->cursor)>bw->o.rmargin && !cwhite(k))
-   wrapword(bw->cursor,(long)bw->o.lmargin,bw->o.french), simple=0;
+   wrapword(bw->cursor,(long)bw->o.lmargin,bw->o.french,NULL), simple=0;
   else if(bw->o.overtype && !piseol(bw->cursor) && k!='\t') udelch(bw);
   bw->cursor->xcol=piscol(bw->cursor);
 #ifndef __MSDOS__
@@ -1097,6 +1097,7 @@ int *notify;
  else
   {
   pset(bw->cursor,q);
+  bw->cursor->xcol=piscol(bw->cursor);
   prm(q);
   return 0;
   }

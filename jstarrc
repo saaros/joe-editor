@@ -1,10 +1,11 @@
 
                          Initialization file for JOE
+                           WordStar / Turbo-C Joe
 
  JOE looks for this file in:
-	1 - .joerc
-	2 - $HOME/.joerc
-	3 - /usr/local/lib/joerc
+	1 - .jstarrc
+	2 - $HOME/.jstarrc
+	3 - /usr/local/lib/jstarrc
 
  This file can include other files by placing the following include command
  in the first column:
@@ -54,11 +55,19 @@
   %T  O for overtype mode, I for insert mode
   %W  W if wordwrap is enabled
   %I  A if autoindent is enabled
+  %X  Rectangle mode indicator
   %n  File name
   %m  '(Modified)' if file has been changed
   %*  '*' if file has been changed
+  %R  Read-only indicator
   %r  Row (line) number
   %c  Column number
+  %o  Byte offset into file
+  %O  Byte offset into file in hex
+  %a  Ascii value of character under cursor
+  %A  Ascii value of character under cursor in hex
+  %p  Percent of file cursor is at
+  %l  No. lines in file
   %k  Entered prefix keys
   %S  '*SHELL*' if there is a shell running in window
   %M  Macro recording message
@@ -71,7 +80,7 @@
   \d  Dim
   \f  Blink
 
--lmsg \i%k%T%W%I %n %m %M
+-lmsg \i%k%T%W%I%X %n %m%R %M
 -rmsg  %S Row %r Col %c %t  Ctrl-J for help
 
  SECOND SECTION: File name dependant local option settings:
@@ -103,6 +112,13 @@
 	-keymap name		Keymap to use if not 'main'
 	-lmsg			Status line definition strings-
 	-rmsg			see previous section for more info.
+	-mnew macro		Macro to execute when new files are loaded
+	-mold macro		Macro to execute when existing files are loaded
+	-msnew macro		Macro to execute when new files are saved
+	-msold macro		Macro to execute when existing files are saved
+
+	Macros for the above options are in the same format as in the key
+	binding section below- but without the key name strings.
 
 *
 -wordwrap
@@ -131,10 +147,10 @@
 {Basic
 \i   Help Screen    turn off with ^J     more help with ESC . (^[.)              \i
 \i \i\uCURSOR\u           \uGO TO\u            \uBLOCK\u     \uDELETE\u    \uMISC\u         \uEXIT\u      \i \i
-\i \i^S left ^D right ^R  prev. screen ^KB begin ^D  char  ^B  reformat ^KX save  \i \i
+\i \i^S left ^D right ^R  prev. screen ^KB begin ^G  char  ^B  reformat ^KX save  \i \i
 \i \i^E up   ^X down  ^C  next screen  ^KK end   ^Y  line  ^V  overtype ^KQ abort \i \i
 \i \i^A previous word ^QS beg. of line ^KV move  ^T  >word ^]  refresh  ^KZ shell \i \i
-\i \i^F next word     ^QD end of line  ^KC copy  ^QY >line ^V  overtype \uFILE\u      \i \i
+\i \i^F next word     ^QD end of line  ^KC copy  ^QY >line ^O  options  \uFILE\u      \i \i
 \i \i\uSEARCH\u           ^QR top of file  ^KW file  ^U  undo  \uSPELL\u        ^KE new   \i \i
 \i \i^QF find text    ^QC end of file  ^KY delete ^^ redo  ^QN word     ^KR insert\i \i
 \i \i^L  find next    ^QI to line No.  ^K/ filter          ^QL file     ^KD save  \i \i
@@ -155,7 +171,7 @@
 \i \i^[) Stop    ^QQ repeat      ^Q, Left  ^[! Command ^QK to ^KK ^[S Forwards    \i \i
 \i \i^[ 0-9 Play ^QM Math                  QUOTE       DELETE     BOOKMARKS       \i \i
 \i \i^[? Query   ^KA Center line           ^P Ctrl-    ^[Y yank   ^K 0-9 Set      \i \i
-\i \i^[H Message                           ^\\ Meta-    ^[O word<  ^Q 0-9 Goto     \i \i
+\i \i^[D Dump    ^[H Message               ^\\ Meta-    ^[O word<  ^Q 0-9 Goto     \i \i
 }
 
 {Programs
@@ -298,12 +314,14 @@ stop		^[ )
 :inherit windows
 
  Spell-check macros
-filt,"cat >ispell.tmp;ispell ispell.tmp </dev/tty >/dev/tty;cat ispell.tmp;/bin/rm ispell.tmp",rtn,retype	^Q l
-filt,"cat >ispell.tmp;ispell ispell.tmp </dev/tty >/dev/tty;cat ispell.tmp;/bin/rm ispell.tmp",rtn,retype	^Q L
-filt,"cat >ispell.tmp;ispell ispell.tmp </dev/tty >/dev/tty;cat ispell.tmp;/bin/rm ispell.tmp",rtn,retype	^Q ^L
-psh,nextword,markk,prevword,markb,filt,"cat >ispell.tmp;ispell ispell.tmp </dev/tty >/dev/tty;tr -d <ispell.tmp '\\n';/bin/rm ispell.tmp",rtn,retype,nextword	^Q n
-psh,nextword,markk,prevword,markb,filt,"cat >ispell.tmp;ispell ispell.tmp </dev/tty >/dev/tty;tr -d <ispell.tmp '\\n';/bin/rm ispell.tmp",rtn,retype,nextword	^Q N
-psh,nextword,markk,prevword,markb,filt,"cat >ispell.tmp;ispell ispell.tmp </dev/tty >/dev/tty;tr -d <ispell.tmp '\\n';/bin/rm ispell.tmp",rtn,retype,nextword	^Q ^N
+:def spellfile filt,"cat >ispell.tmp;ispell ispell.tmp </dev/tty >/dev/tty;cat ispell.tmp;/bin/rm ispell.tmp",rtn,retype
+:def spellword psh,nextword,markk,prevword,markb,filt,"cat >ispell.tmp;ispell ispell.tmp </dev/tty >/dev/tty;tr -d <ispell.tmp '\\012';/bin/rm ispell.tmp",rtn,retype,nextword
+spellfile	^Q l
+spellfile	^Q L
+spellfile	^Q ^L
+spellword	^Q n
+spellword	^Q N
+spellword	^Q ^N
 
 rtarw,prevword,markb,nextword,markk	^K T
 rtarw,prevword,markb,nextword,markk	^K ^T
@@ -317,7 +335,6 @@ rsrch		^[ R
 rsrch		^[ ^R
 backw		^[ o
 backw		^[ ^O
-backw		^[ O
 yankpop		^[ y
 yankpop		^[ Y
 yankpop		^[ ^Y
@@ -326,7 +343,6 @@ parserr		^[ ^E
 parserr		^[ e
 nxterr		^[ =
 prverr		^[ -
-edit,rtn,filt,query,parserr	^[ C
 edit,rtn,filt,query,parserr	^[ ^C
 edit,rtn,filt,query,parserr	^[ c
 
@@ -399,9 +415,9 @@ exsave		^K x
 ffirst		^Q F		Find first
 ffirst		^Q ^F
 ffirst		^Q f
-ffirst		^Q A		Find first
-ffirst		^Q ^A
-ffirst		^Q a
+qrepl		^Q A		Search & replace
+qrepl		^Q ^A
+qrepl		^Q a
 filt		^K /		Filter block
 fnext		^L		Find next
 format		^B		Format paragraph
@@ -416,6 +432,8 @@ insc		^@
 insf		^K R		Insert a file
 insf		^K ^R
 insf		^K r
+macros		^[ d		Dump macros
+macros		^[ ^D
 mode,"T"	^V		Insert/Overtype
 mode,"T"	.kI
 lindent		^K ,		Indent to left
@@ -491,6 +509,7 @@ complete	^I
 
 :menu			Selection menus
 :inherit windows
+abort		^[ ^[
 backsmenu	^?
 backsmenu	^H
 bofmenu		^Q R

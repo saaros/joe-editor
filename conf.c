@@ -19,30 +19,62 @@ char *argv[];
  fprintf(f,"#define _Iconfig 1\n");
  fprintf(f,"\n");
 
+ fprintf(f,"/* Uncomment to use TERMINFO database*/\n");
+ if(argv[2][0]=='1')
+  fprintf(f,"#define TERMINFO 1\n");
+ else
+  fprintf(f,"/* #define TERMINFO 1 */\n");
+ fprintf(f,"\n");
+
  fprintf(f,"/* Path where main.c tries to open rc file */\n");
  fprintf(f,"#define JOERC \"%s/\"\n\n",argv[1]);
-
- fprintf(f,"/* Define to prevent joe from using /dev/tty */\n");
- if(argv[2][0]=='0')
-  fprintf(f,"/* #define IDLEOUT 1 */\n");
- else
-  fprintf(f,"#define IDLEOUT 1\n");
 
  fprintf(f,"\n");
 
  /* Figure out what type of tty we have */
  if(g=fopen("/usr/include/termios.h","r"))
   {
-  fprintf(f,"/* Uncomment the tty type.  Leave both uncommented for BSD */\n");
+  fprintf(f,"/* Uncomment the tty type.  Leave all uncommented for BSD */\n");
   fprintf(f,"#define TTYPOSIX 1\n");
+  fprintf(f,"/* #define SYSPOSIX 1*/\n");
   fprintf(f,"/* #define TTYSV 1 */\n");
+  fprintf(f,"/* #define SYSSV 1 */\n");
+  fclose(g);
+  }
+ else if(g=fopen("/usr/include/sys/termios.h","r"))
+  {
+  fprintf(f,"/* Uncomment the tty type.  Leave all uncommented for BSD */\n");
+  fprintf(f,"#define TTYPOSIX 1\n");
+  fprintf(f,"#define SYSPOSIX 1\n");
+  fprintf(f,"/* #define TTYSV 1 */\n");
+  fprintf(f,"/* #define SYSSV 1 */\n");
   fclose(g);
   }
  else if(g=fopen("/usr/include/termio.h","r"))
   {
   fprintf(f,"/* Uncomment the tty type.  Leave both uncommented for BSD */\n");
   fprintf(f,"/* #define TTYPOSIX 1 */\n");
+  fprintf(f,"/* #define SYSPOSIX 1 */\n");
   fprintf(f,"#define TTYSV 1\n");
+  fprintf(f,"/* #define SYSSV 1 */\n");
+  fclose(g);
+  }
+ else if(g=fopen("/usr/include/sys/termio.h","r"))
+  {
+  fprintf(f,"/* Uncomment the tty type.  Leave all uncommented for BSD */\n");
+  fprintf(f,"/* #define TTYPOSIX 1 */\n");
+  fprintf(f,"/* #define SYSPOSIX 1 */\n");
+  fprintf(f,"#define TTYSV 1\n");
+  fprintf(f,"#define SYSSV 1\n");
+  fclose(g);
+  }
+ else
+  {
+  fprintf(f,"/* Uncomment the tty type.  Leave all uncommented for BSD */\n");
+  fprintf(f,"/* #define TTYPOSIX 1 */\n");
+  fprintf(f,"/* #define SYSPOSIX 1 */\n");
+  fprintf(f,"/* #define TTYSV 1 */\n");
+  fprintf(f,"/* #define SYSSV 1 */\n");
   fclose(g);
   }
 

@@ -38,6 +38,8 @@ extern int mid, dspasis, force, help, pgamnt, nobackups, lightoff,
            exask, skiptop, noxon, lines, staen, columns, Baud, dopadding,
            marking, beep;
 
+extern int idleout;	/* Clear to use /dev/tty for screen */
+extern char *joeterm;
 int help=0;		/* Set to have help on when starting */
 int nonotice=0;		/* Set to prevent copyright notice */
 int orphan=0;
@@ -101,8 +103,12 @@ static int ungotc=0;
 
 void nungetc(c)
  {
- ungot=1;
- ungotc=c;
+ if(c!='C'-'@' && c!='M'-'@')
+  {
+  chmac();
+  ungot=1;
+  ungotc=c;
+  }
  }
 
 int edloop(flg)
@@ -117,6 +123,11 @@ int edloop(flg)
   {
   MACRO *m;
   int c;
+  if(exmsg && !flg)
+   {
+   vsrm(exmsg);
+   exmsg=0;
+   }
   edupd(1);
   if(!ahead && !have) ahead=1;
   if(ungot) c=ungotc, ungot=0;
@@ -176,6 +187,7 @@ char *argv[];
  if(s=getenv("BAUD")) sscanf(s,"%u",&Baud);
  if(getenv("DOPADDING")) dopadding=1;
  if(getenv("NOXON")) noxon=1;
+ if(s=getenv("JOETERM")) joeterm=s;
 
 #ifndef __MSDOS__
  if(!(cap=getcap(NULL,9600,NULL,NULL)))
@@ -274,13 +286,15 @@ char *argv[];
  donerc:
  izhelp();
  for(c=1;argv[c];++c)
-  if(argv[c][0]=='-' && argv[c][1])
-   switch(glopt(argv[c]+1,argv[c+1],NULL,1))
-    {
-    case 0: fprintf(stderr,"Unknown option '%s'\n",argv[c]); break;
-    case 1: break;
-    case 2: ++c; break;
-    }
+  if(argv[c][0]=='-')
+   if(argv[c][1])
+    switch(glopt(argv[c]+1,argv[c+1],NULL,1))
+     {
+     case 0: fprintf(stderr,"Unknown option '%s'\n",argv[c]); break;
+     case 1: break;
+     case 2: ++c; break;
+     }
+   else idleout=0;
 
  if(!(n=nopen(cap))) return 1;
  maint=screate(n);
@@ -299,7 +313,7 @@ char *argv[];
   else
    {
    B *b=bfind(argv[c]);
-   BW *bw;
+   BW *bw=0;
    int er=error;
    if(!orphan || !opened)
     {
@@ -307,20 +321,26 @@ char *argv[];
     if(er) msgnwt(bw,msgs[5+er]);
     }
    else b->orphan=1;
-   bw->o.readonly=bw->b->rdonly;
-   if(backopt) while(backopt!=c)
-    if(argv[backopt][0]=='+')
-     {
-     long lnum=0;
-     sscanf(argv[backopt]+1,"%ld",&lnum);
-     if(lnum>0) pline(bw->cursor,lnum-1);
-     ++backopt;
-     }
-    else
-     if(glopt(argv[backopt]+1,argv[backopt+1],&bw->o,0)==2) backopt+=2;
-     else backopt+=1;
-   bw->b->o=bw->o;
-   bw->b->rdonly=bw->o.readonly;
+   if(bw)
+    {
+    long lnum=0;
+    bw->o.readonly=bw->b->rdonly;
+    if(backopt) while(backopt!=c)
+     if(argv[backopt][0]=='+')
+      {
+      sscanf(argv[backopt]+1,"%ld",&lnum);
+      ++backopt;
+      }
+     else
+      if(glopt(argv[backopt]+1,argv[backopt+1],&bw->o,0)==2) backopt+=2;
+      else backopt+=1;
+    bw->b->o=bw->o;
+    bw->b->rdonly=bw->o.readonly;
+    maint->curwin=bw->parent;
+    if(er== -1 && bw->o.mnew) exemac(bw->o.mnew);
+    if(er==0 && bw->o.mold) exemac(bw->o.mold);
+    if(lnum>0) pline(bw->cursor,lnum-1);
+    }
    opened=1;
    backopt=0;
    }
@@ -333,10 +353,14 @@ char *argv[];
   mid=omid;
   }
  else
-  wmktw(maint,bfind(""));
+  {
+  BW *bw=wmktw(maint,bfind(""));
+  if(bw->o.mnew) exemac(bw->o.mnew);
+  }
+ maint->curwin=maint->topwin;
  if(help) helpon(maint);
  if(!nonotice)
-  msgnw(lastw(maint)->object,"\\i** Joe's Own Editor v2.2 ** Copyright (C) 1994 Joseph H. Allen **\\i");
+  msgnw(lastw(maint)->object,"\\i** Joe's Own Editor v2.5 ** Copyright (C) 1995 Joseph H. Allen **\\i");
  edloop(0);
  vclose(vmem);
  nclose(n);
