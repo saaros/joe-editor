@@ -1,29 +1,40 @@
-This is close to the very first version of JOE (or E as it was first
-called).  It has:
+Here is 'J', which is not the first version of "E" released on the net, but
+is pretty close.  It shows the result of some critical influence from people
+on the net.  This version has:
 
- * Only a single window.
+* gap buffer
 
- * No ~ expansion of file names.
+* K&R C, because it was more portable.
 
- * Block selection is not quite like WordStar.  You set the mark with ^KB
-   and then hit ^KM to cut the text between the mark and the cursor.  In
-   this case, the cut text is saved in a file called "cut.c".  You hit ^T to
-   insert the cut.e file at the cursor.
+* multiple windows
 
- * The terminal screen must be 80 x 24.
+* ~ expansion of file names
 
- * VT52 terminals are handled, but you have to recompile.
+* A man page! (complete with embarrassing spelling errors :)
 
- * It does have word wrap, paragraph reformat, autoindent and
-   picture mode.
+* Compile with 'make cruddy'.
 
- * No status line.
+* Still only works in 80x24 terminal
 
- * It does have a single page of on-line help: hit ^K H to toggle it.
+* Undelete
 
- * The entire editor is a single 2800 line C file: e.c
+Here is the original README file:
 
- * Does not have gap buffer yet.
 
- * Note that E is ANSI-C!  I later reverted it to K&R C for more
-   enhanced portability.
+
+If you don't know what this is, read the NEWS file.
+
+To compile:
+
+	(1) Determine where you want to install the editor program and the
+	    system default keymap file.  Put this path in the Makefile.  If
+	    you're a mere user, don't worry about this.  Instead, place a copy
+	    of the 'keymap.j' file (created after you make) in your home
+	    directory.
+
+	(2) type 'make xenix' for xenix systems, 'make hpux' for hpux systems
+	    or 'make bsd' for BSD systems.  If none of these work, type
+	    'make cruddy' to make a version with an inferior terminal driver.
+
+	(3) To install it in the system, log in as superuser and do
+	    'make install'
