@@ -330,6 +330,7 @@ void wrapword(BW *bw, P *p, long int indent, int french, int no_over, unsigned c
 	int c;
 	long to = p->byte;
 	int my_indents = 0;
+	off_t indents_size = 0;
 	
 	/* autoindent when called by utype */
 	if (!indents) {
@@ -347,7 +348,8 @@ void wrapword(BW *bw, P *p, long int indent, int french, int no_over, unsigned c
 
 			indent = nindent(bw, q, 0);
 			pcol(r, indent);
-			indents = brs(q, r->byte - q->byte);
+			indents_size = r->byte - q->byte;
+			indents = brs(q, indents_size);
 			prm(r);
 		} else {
 			/* First line */
@@ -356,7 +358,8 @@ void wrapword(BW *bw, P *p, long int indent, int french, int no_over, unsigned c
 
 			indent = nindent(bw, s, 1);
 			pcol(r, indent);
-			indents = brs(s, r->byte - s->byte);
+			indents_size = r->byte - s->byte;
+			indents = brs(s, indents_size);
 			prm(r);
 			if (!bw->o.autoindent) {
 				/* Don't indent second line of single-line paragraphs if autoindent is off */
@@ -364,7 +367,7 @@ void wrapword(BW *bw, P *p, long int indent, int french, int no_over, unsigned c
 				int orgx = x;
 				while (x && (indents[x - 1] == ' ' || indents[x - 1] == '\t'))
 					indents[--x] = 0;
-				if (x && orgx != x) {
+				if (x && orgx != x && (x < indents_size)) {
 					indents[x++] = ' ';
 					indents[x] = 0;
 				}
@@ -523,6 +526,7 @@ int uformat(BW *bw)
 	long curoff;
 	int c;
 	P *p, *q;
+	off_t indents_size = 0;
 
 	p = pdup(bw->cursor, USTR "uformat");
 	p_goto_bol(p);
@@ -553,21 +557,23 @@ int uformat(BW *bw)
 
 		indent = nindent(bw, q, 0);
 		pcol(r, indent);
-		indents = brs(q, r->byte - q->byte);
+		indents_size = r->byte - q->byte;
+		indents = brs(q, indents_size);
 		prm(r);
 	} else {
 		P *r = pdup(p, USTR "uformat");
 		int x, y;
 		indent = nindent(bw, p, 1); /* allowing * and - here */
 		pcol(r, indent);
-		indents = brs(p, r->byte - p->byte);
+		indents_size = r->byte - p->byte;
+		indents = brs(p, indents_size);
 		prm(r);
 		if (!bw->o.autoindent) {
 			/* Don't indent second line of single-line paragraphs if autoindent is off */
 			int x = zlen(indents);
 			while (x && (indents[x - 1] == ' ' || indents[x - 1] == '\t'))
 				indents[--x] = 0;
-			if (x) {
+			if ((x) && (x < indents_size)) {
 				indents[x++] = ' ';
 				indents[x] = 0;
 			}
